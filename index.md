@@ -82,16 +82,29 @@ Here's where you'll put your code. The syntax below places it into a block of co
 
 <!---
 ```c++
+ int motorpin1 = 2;
+ int motorpin2 = 3;
+
+// motorpin1 is backward, motorpin 2 is forward
+
 void setup() {
   // put your setup code here, to run once:
-  Serial.begin(9600);
-  Serial.println("Hello World!");
+  pinMode(motorpin1, OUTPUT);
+  pinMode(motorpin2, OUTPUT);
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
+   
+   // digitalWrite(motorpin1, LOW);
+   // digitalWrite(motorpin2, HIGH); 
+   // analogWrite(9, 255);
 
-}
+    analogWrite(motorpin1, 0);
+    analogWrite(motorpin2, 255);
+    
+   // digitalWrite(motorpin2, HIGH); 
+   
 ```
 -->
 
