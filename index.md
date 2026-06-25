@@ -80,7 +80,6 @@ Here's where you'll put images of your schematics. [Tinkercad](https://www.tinke
 # Code 
 
 ```c++
-
 #include <SoftwareSerial.h>
 
 // 1. HC-06 wires to these pins:
@@ -128,7 +127,6 @@ void loop() {
     }
   }
 }
-
 ```
 
 
