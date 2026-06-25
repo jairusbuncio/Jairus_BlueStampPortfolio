@@ -75,77 +75,79 @@ With this soldering and robot building knowledge, I look forward to my main proj
 Here's where you'll put images of your schematics. [Tinkercad](https://www.tinkercad.com/blog/official-guide-to-tinkercad-circuits) and [Fritzing](https://fritzing.org/learning/) are both great resoruces to create professional schematic diagrams, though BSE recommends Tinkercad becuase it can be done easily and for free in the browser. 
 -->
 
-<!---
-# Code
-Here's where you'll put your code. The syntax below places it into a block of code. Follow the guide [here]([url](https://www.markdownguide.org/extended-syntax/)) to learn how to customize it to your project needs. 
--->
 
-<!---
+# Code 
+
 ```c++
-//motor code so far
 
- int motorpin1 = 2;
- int motorpin2 = 3;
+// 1. HC-06 wires to these pins:
+// HC-06 TX goes to Pin 10. HC-06 RX goes to Pin 11.
+SoftwareSerial bluetooth(10, 11); 
 
-// motorpin1 is backward, motorpin 2 is forward
-
-void setup() {
-  // put your setup code here, to run once:
-  pinMode(motorpin1, OUTPUT);
-  pinMode(motorpin2, OUTPUT);
-}
-
-void loop() {
-  // put your main code here, to run repeatedly:
-   
-   // digitalWrite(motorpin1, LOW);
-   // digitalWrite(motorpin2, HIGH); 
-   // analogWrite(9, 255);
-
-    analogWrite(motorpin1, 0);
-    analogWrite(motorpin2, 255);
-    
-   // digitalWrite(motorpin2, HIGH); 
-   
-}
-
-// bluetooth code so far
-
-#include <SoftwareSerial.h>
-
-// Pin 10 is RX (Connect to HC-06 TX), Pin 11 is TX (Connect to HC-06 RX)
-SoftwareSerial BTSerial(10, 11); 
+// 2. Current Pins
+const int EN = 5;   // Enable/Speed pin (PWM)
+const int IN1 = 2;  // Direction pin 1
+const int IN2 = 3;  // Direction pin 2
 
 void setup() {
-  Serial.begin(9600);   // USB Serial Monitor
-  BTSerial.begin(9600); // HC-06 Default Speed
+  // Start hardware serial so you can read troubleshooting text on your laptop screen
+  Serial.begin(9600); 
+
+  // Start Bluetooth communication
+  bluetooth.begin(9600); 
   
-  // Force the Arduino to continuously spam data out 
-  // This gives macOS something to catch when it tries to connect
-  Serial.println("System online. Attempting Mac handshake...");
-
+  pinMode(EN, OUTPUT);
+  pinMode(IN1, OUTPUT);
+  pinMode(IN2, OUTPUT);
 }
 
 void loop() {
-  BTSerial.println("PING_FROM_ARDUINO"); // Actively feeds the Bluetooth line
-  delay(500); 
-
+  // Check if data is arriving from the Bluetooth module
+  if (bluetooth.available() > 0) {
+    char command = bluetooth.read(); // Read the character
+    
+    // This prints whatever character your laptop sends to the Serial Monitor!
+    Serial.print("Bluetooth received character: ");
+    Serial.println(command);
+    
+    switch (command) {
+      case 'F': // Move Forward
+        digitalWrite(IN1, HIGH);
+        digitalWrite(IN2, LOW);
+        analogWrite(EN, 255); 
+        break;
+      case 'B': // Move Backward
+        digitalWrite(IN1, LOW);
+        digitalWrite(IN2, HIGH);
+        analogWrite(EN, 180);
+        break;
+      case 'S': // Stop
+        digitalWrite(IN1, LOW);
+        digitalWrite(IN2, LOW);
+        analogWrite(EN, 0);
+        break;
+    }
+  }
 }
 
 ```
--->
 
-<!---
+
 # Bill of Materials
 Here's where you'll list the parts in your project. To add more rows, just copy and paste the example rows below.
 Don't forget to place the link of where to buy each component inside the quotation marks in the corresponding row after href =. Follow the guide [here]([url](https://www.markdownguide.org/extended-syntax/)) to learn how to customize this to your project needs. 
 
 | **Part** | **Note** | **Price** | **Link** |
 |:--:|:--:|:--:|:--:|
-| Item Name | What the item is used for | $Price | <a href="https://www.amazon.com/Arduino-A000066-ARDUINO-UNO-R3/dp/B008GRTSV6/"> Link </a> |
-| Item Name | What the item is used for | $Price | <a href="https://www.amazon.com/Arduino-A000066-ARDUINO-UNO-R3/dp/B008GRTSV6/"> Link </a> |
-| Item Name | What the item is used for | $Price | <a href="https://www.amazon.com/Arduino-A000066-ARDUINO-UNO-R3/dp/B008GRTSV6/"> Link </a> |
--->
+| Arduino Uno R3 | Program Execution | $16.99 | <a href="https://a.co/d/03OlNw2A"> Link </a> |
+| Motor Driver | Motor Control | $6.98 | <a href="https://a.co/d/0hf1RYcP"> Link </a> |
+| DC Gear Motor | Rotational motion | $6.99 | <a href="https://a.co/d/03TCnzkl"> Link </a> |
+| 5x AA Batteries | Power Supply | $6.49 | <a href="https://www.amazon.com/dp/B00O869KJE?_encoding=UTF8&psc=1&ref_=cm_sw_r_cp_ud_dp_DBBMX484PMC3C4MC11G4_1"> Link </a> |
+| HC-06 Bluetooth Module | Bluetooth Connection | $9.99 | <a href="https://www.amazon.com/dp/B074J5WMH1?ref_=cm_sw_r_cp_ud_dp_GT2T5KTQEW4TFKFG29VG"> Link </a> |
+| L-Brackets & Screws | Holds Wooden Beams Upright | $6.99 | <a href="https://www.amazon.com/dp/B0BLBWZYSQ?ref_=cm_sw_r_cp_ud_dp_KGAC8ZXQFY4A97Z10FT4_1"> Link </a> |
+| Plywood | Stability | $18.48 | <a href="https://www.amazon.com/dp/B0CYM54W1S?ref_=cm_sw_r_cp_ud_dp_M3J0GW1763MNSZHPC5SH"> Link </a> |
+| Square Wooden Dowels | Vertical Supports| $13.99 | <a href="https://a.co/d/086giWlL"> Link </a> |
+| PLA Filament | 3D Print Material | $13.99 | <a href="https://a.co/d/01n8owUR"> Link </a> |
 
 <!---
 # Other Resources/Examples
