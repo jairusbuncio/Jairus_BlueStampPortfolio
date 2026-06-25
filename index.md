@@ -75,11 +75,13 @@ With this soldering and robot building knowledge, I look forward to my main proj
 Here's where you'll put images of your schematics. [Tinkercad](https://www.tinkercad.com/blog/official-guide-to-tinkercad-circuits) and [Fritzing](https://fritzing.org/learning/) are both great resoruces to create professional schematic diagrams, though BSE recommends Tinkercad becuase it can be done easily and for free in the browser. 
 -->
 
-<!---
+
 
 # Code 
 
 ```c++
+
+#include <SoftwareSerial.h>
 
 // 1. HC-06 wires to these pins:
 // HC-06 TX goes to Pin 10. HC-06 RX goes to Pin 11.
@@ -107,10 +109,6 @@ void loop() {
   if (bluetooth.available() > 0) {
     char command = bluetooth.read(); // Read the character
     
-    // This prints whatever character your laptop sends to the Serial Monitor!
-    Serial.print("Bluetooth received character: ");
-    Serial.println(command);
-    
     switch (command) {
       case 'F': // Move Forward
         digitalWrite(IN1, HIGH);
@@ -132,7 +130,7 @@ void loop() {
 }
 
 ```
--->
+
 
 # Bill of Materials
 Here's where you'll list the parts in your project. To add more rows, just copy and paste the example rows below.
