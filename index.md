@@ -82,6 +82,8 @@ Here's where you'll put your code. The syntax below places it into a block of co
 
 <!---
 ```c++
+//motor code so far
+
  int motorpin1 = 2;
  int motorpin2 = 3;
 
@@ -105,6 +107,31 @@ void loop() {
     
    // digitalWrite(motorpin2, HIGH); 
    
+}
+
+// bluetooth code so far
+
+#include <SoftwareSerial.h>
+
+// Pin 10 is RX (Connect to HC-06 TX), Pin 11 is TX (Connect to HC-06 RX)
+SoftwareSerial BTSerial(10, 11); 
+
+void setup() {
+  Serial.begin(9600);   // USB Serial Monitor
+  BTSerial.begin(9600); // HC-06 Default Speed
+  
+  // Force the Arduino to continuously spam data out 
+  // This gives macOS something to catch when it tries to connect
+  Serial.println("System online. Attempting Mac handshake...");
+
+}
+
+void loop() {
+  BTSerial.println("PING_FROM_ARDUINO"); // Actively feeds the Bluetooth line
+  delay(500); 
+
+}
+
 ```
 -->
 
