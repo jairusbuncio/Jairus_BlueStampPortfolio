@@ -112,7 +112,7 @@ void loop() {
       case 'F': // Move Forward
         digitalWrite(IN1, HIGH);
         digitalWrite(IN2, LOW);
-        analogWrite(EN, 255); 
+        analogWrite(EN, 180); 
         break;
       case 'B': // Move Backward
         digitalWrite(IN1, LOW);
