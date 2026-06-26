@@ -92,7 +92,7 @@ const int IN1 = 2;  // Direction pin 1
 const int IN2 = 3;  // Direction pin 2
 
 void setup() {
-  // Start hardware serial so you can read troubleshooting text on your laptop screen
+  // Start hardware serial 
   Serial.begin(9600); 
 
   // Start Bluetooth communication
