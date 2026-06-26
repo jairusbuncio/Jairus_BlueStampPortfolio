@@ -77,7 +77,7 @@ Here's where you'll put images of your schematics. [Tinkercad](https://www.tinke
 
 
 
-# Code 
+# Arduino IDE Code 
 
 ```c++
 #include <SoftwareSerial.h>
@@ -147,6 +147,97 @@ void loop() {
   }
 
 }
+```
+
+# Python Code
+
+```c++
+import tkinter as tk
+import serial
+
+# Connect to HC-06 Bluetooth
+bluetooth = serial.Serial("/dev/cu.HC-06", 9600)
+
+# Colors
+BLUE = "#0B3D91"
+YELLOW = "#FFD100"
+WHITE = "white"
+
+# Send commands to Arduino
+
+
+def send_forward():
+    bluetooth.write(b'F')
+
+
+def send_backward():
+    bluetooth.write(b'B')
+
+
+def send_stop():
+    bluetooth.write(b'S')
+
+
+# Make main window
+root = tk.Tk()
+root.title("Gyroscope Control")
+root.geometry("1920x1080")
+root.configure(bg=BLUE)
+
+# Title text
+title = tk.Label(
+    root,
+    text="Gyroscope Control",
+    font=("Arial", 40, "bold"),
+    bg=BLUE,
+    fg=YELLOW
+)
+title.pack(pady=60)
+
+# Frame to hold buttons
+button_frame = tk.Frame(root, bg=BLUE)
+button_frame.pack(expand=True)
+
+# Button settings
+button_font = ("Arial", 28, "bold")
+button_width = 12
+button_height = 5
+
+# Buttons
+forward_button = tk.Button(
+    button_frame,
+    text="Forward",
+    command=send_forward,
+    font=button_font,
+    width=button_width,
+    height=button_height
+)
+
+backward_button = tk.Button(
+    button_frame,
+    text="Backward",
+    command=send_backward,
+    font=button_font,
+    width=button_width,
+    height=button_height
+)
+
+stop_button = tk.Button(
+    button_frame,
+    text="Stop",
+    command=send_stop,
+    font=button_font,
+    width=button_width,
+    height=button_height
+)
+
+# Place buttons
+forward_button.grid(row=0, column=0, padx=50)
+backward_button.grid(row=0, column=1, padx=50)
+stop_button.grid(row=0, column=2, padx=50)
+
+# Run window
+root.mainloop()
 ```
 
 
