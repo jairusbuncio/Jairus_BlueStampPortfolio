@@ -149,7 +149,7 @@ void loop() {
 }
 ```
 
-# Python Code
+# Python Code (For the Interface)
 
 ```c++
 import tkinter as tk
