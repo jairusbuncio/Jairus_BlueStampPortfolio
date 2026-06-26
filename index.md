@@ -82,50 +82,70 @@ Here's where you'll put images of your schematics. [Tinkercad](https://www.tinke
 ```c++
 #include <SoftwareSerial.h>
 
-// 1. HC-06 wires to these pins:
-// HC-06 TX goes to Pin 10. HC-06 RX goes to Pin 11.
-SoftwareSerial bluetooth(10, 11); 
+// HC-06 TX -> Digital Pin 10
+// HC-06 RX -> Digital Pin 11
+SoftwareSerial bluetooth(10, 11);
 
-// 2. Current Pins
-const int EN = 5;   // Enable/Speed pin (PWM)
-const int IN1 = 2;  // Direction pin 1
-const int IN2 = 3;  // Direction pin 2
+// Motor driver pins
+const int EN = 5;
+const int IN1 = 2;
+const int IN2 = 3;
 
 void setup() {
-  // Start hardware serial 
-  Serial.begin(9600); 
+
+  // Start Serial Monitor
+  Serial.begin(9600);
 
   // Start Bluetooth communication
-  bluetooth.begin(9600); 
-  
+  bluetooth.begin(9600);
+
+  // Set motor pins as outputs
   pinMode(EN, OUTPUT);
   pinMode(IN1, OUTPUT);
   pinMode(IN2, OUTPUT);
+
 }
 
 void loop() {
-  // Check if data is arriving from the Bluetooth module
+
+  // Check if Bluetooth sent any data
   if (bluetooth.available() > 0) {
-    char command = bluetooth.read(); // Read the character
-    
-    switch (command) {
-      case 'F': // Move Forward
-        digitalWrite(IN1, HIGH);
-        digitalWrite(IN2, LOW);
-        analogWrite(EN, 180); 
-        break;
-      case 'B': // Move Backward
-        digitalWrite(IN1, LOW);
-        digitalWrite(IN2, HIGH);
-        analogWrite(EN, 180);
-        break;
-      case 'S': // Stop
-        digitalWrite(IN1, LOW);
-        digitalWrite(IN2, LOW);
-        analogWrite(EN, 0);
-        break;
+
+    // Read one character from Bluetooth
+    char command = bluetooth.read();
+
+    // If the command is F, drive forward
+    if (command == 'F') {
+
+      digitalWrite(IN1, HIGH);
+      digitalWrite(IN2, LOW);
+
+      analogWrite(EN, 180);
+
     }
+
+    // If the command is B, drive backward
+    if (command == 'B') {
+
+      digitalWrite(IN1, LOW);
+      digitalWrite(IN2, HIGH);
+
+      analogWrite(EN, 180);
+
+    }
+
+    // If the command is S, stop the motor
+    if (command == 'S') {
+
+      digitalWrite(IN1, LOW);
+      digitalWrite(IN2, LOW);
+
+      analogWrite(EN, 0);
+
+    }
+
   }
+
 }
 ```
 
