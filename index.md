@@ -9,7 +9,7 @@ This project is a rocket flight test system designed to spin the gyroscope with 
 
 | **Engineer** | **School** | **Area of Interest** | **Grade** |
 |:--:|:--:|:--:|:--:|
-| Jairus B | American Canyon High | Aerospace Engineering | Incoming Senior
+| Jairus B | American Canyon High | Mechanical Engineering | Incoming Senior
 
 <!--- **Replace the BlueStamp logo below with an image of yourself and your completed project. Follow the guide [here](https://tomcam.github.io/least-github-pages/adding-images-github-pages-site.html) if you need help.** -->
 
