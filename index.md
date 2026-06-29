@@ -114,27 +114,47 @@ void loop() {
     // Read one character from Bluetooth
     char command = bluetooth.read();
 
-    // If the command is F, drive forward
+    // Forward (Slow)
     if (command == 'F') {
 
       digitalWrite(IN1, HIGH);
       digitalWrite(IN2, LOW);
 
-      analogWrite(EN, 180);
+      analogWrite(EN, 120);
 
     }
 
-    // If the command is B, drive backward
+    // Forward (Fast)
+    if (command == 'G') {
+
+      digitalWrite(IN1, HIGH);
+      digitalWrite(IN2, LOW);
+
+      analogWrite(EN, 255);
+
+    }
+
+    // Backward (Slow)
     if (command == 'B') {
 
       digitalWrite(IN1, LOW);
       digitalWrite(IN2, HIGH);
 
-      analogWrite(EN, 180);
+      analogWrite(EN, 120);
 
     }
 
-    // If the command is S, stop the motor
+    // Backward (Fast)
+    if (command == 'H') {
+
+      digitalWrite(IN1, LOW);
+      digitalWrite(IN2, HIGH);
+
+      analogWrite(EN, 255);
+
+    }
+
+    // Stop
     if (command == 'S') {
 
       digitalWrite(IN1, LOW);
@@ -161,30 +181,37 @@ bluetooth = serial.Serial("/dev/cu.HC-06", 9600)
 # Colors
 BLUE = "#0B3D91"
 YELLOW = "#FFD100"
-WHITE = "white"
 
-# Send commands to Arduino
+# Commands
 
 
-def send_forward():
+def forward_slow():
     bluetooth.write(b'F')
 
 
-def send_backward():
+def forward_fast():
+    bluetooth.write(b'G')
+
+
+def backward_slow():
     bluetooth.write(b'B')
 
 
-def send_stop():
+def backward_fast():
+    bluetooth.write(b'H')
+
+
+def stop():
     bluetooth.write(b'S')
 
 
-# Make main window
+# Window
 root = tk.Tk()
 root.title("Gyroscope Control")
 root.geometry("1920x1080")
 root.configure(bg=BLUE)
 
-# Title text
+# Title
 title = tk.Label(
     root,
     text="Gyroscope Control",
@@ -194,50 +221,33 @@ title = tk.Label(
 )
 title.pack(pady=60)
 
-# Frame to hold buttons
+# Frame
 button_frame = tk.Frame(root, bg=BLUE)
 button_frame.pack(expand=True)
 
 # Button settings
-button_font = ("Arial", 28, "bold")
+button_font = ("Arial", 24, "bold")
 button_width = 12
 button_height = 5
 
 # Buttons
-forward_button = tk.Button(
-    button_frame,
-    text="Forward",
-    command=send_forward,
-    font=button_font,
-    width=button_width,
-    height=button_height
-)
+tk.Button(button_frame, text="Forward\n(Fast)", command=forward_fast,
+          font=button_font, width=button_width, height=button_height).grid(row=0, column=0, padx=20)
 
-backward_button = tk.Button(
-    button_frame,
-    text="Backward",
-    command=send_backward,
-    font=button_font,
-    width=button_width,
-    height=button_height
-)
+tk.Button(button_frame, text="Forward\n(Slow)", command=forward_slow,
+          font=button_font, width=button_width, height=button_height).grid(row=0, column=1, padx=20)
 
-stop_button = tk.Button(
-    button_frame,
-    text="Stop",
-    command=send_stop,
-    font=button_font,
-    width=button_width,
-    height=button_height
-)
+tk.Button(button_frame, text="Stop", command=stop,
+          font=button_font, width=button_width, height=button_height).grid(row=0, column=2, padx=20)
 
-# Place buttons
-forward_button.grid(row=0, column=0, padx=50)
-backward_button.grid(row=0, column=1, padx=50)
-stop_button.grid(row=0, column=2, padx=50)
+tk.Button(button_frame, text="Backward\n(Slow)", command=backward_slow,
+          font=button_font, width=button_width, height=button_height).grid(row=0, column=3, padx=20)
 
-# Run window
+tk.Button(button_frame, text="Backward\n(Fast)", command=backward_fast,
+          font=button_font, width=button_width, height=button_height).grid(row=0, column=4, padx=20)
+
 root.mainloop()
+
 ```
 
 
