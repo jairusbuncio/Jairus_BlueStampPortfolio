@@ -126,7 +126,7 @@ void loop() {
       digitalWrite(IN1, HIGH);
       digitalWrite(IN2, LOW);
 
-      analogWrite(EN, 120);
+      analogWrite(EN, 165);
 
     }
 
@@ -136,7 +136,7 @@ void loop() {
       digitalWrite(IN1, HIGH);
       digitalWrite(IN2, LOW);
 
-      analogWrite(EN, 255);
+      analogWrite(EN, 210);
 
     }
 
@@ -146,7 +146,7 @@ void loop() {
       digitalWrite(IN1, LOW);
       digitalWrite(IN2, HIGH);
 
-      analogWrite(EN, 120);
+      analogWrite(EN, 165);
 
     }
 
@@ -156,7 +156,7 @@ void loop() {
       digitalWrite(IN1, LOW);
       digitalWrite(IN2, HIGH);
 
-      analogWrite(EN, 255);
+      analogWrite(EN, 210);
 
     }
 
