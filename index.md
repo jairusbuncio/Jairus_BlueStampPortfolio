@@ -178,29 +178,20 @@ void loop() {
 # Arduino IDE Code (For the Sensor)
 
 ```c++
-// Basic demo for accelerometer readings from Adafruit MPU6050
-
 #include <Adafruit_MPU6050.h>
 #include <Adafruit_Sensor.h>
 #include <Wire.h>
 #include <SoftwareSerial.h>
 
-// HC-06 TX -> Digital Pin 2
-// HC-06 RX -> Digital Pin 3
-SoftwareSerial bluetooth(2, 3);
+// HC-05 TX -> D2, HC-05 RX -> D3
+SoftwareSerial bluetooth(2, 3); 
 
 Adafruit_MPU6050 mpu;
 
-void setup(void) {
+void setup() {
   Serial.begin(9600);
-  while (!Serial) {
-    delay(10); // will pause Zero, Leonardo, etc until serial console opens
-  }
-
-  // Start Bluetooth communication
   bluetooth.begin(9600);
 
-  // Try to initialize!
   if (!mpu.begin()) {
     Serial.println("Failed to find MPU6050 chip");
     while (1) {
@@ -211,35 +202,27 @@ void setup(void) {
   mpu.setAccelerometerRange(MPU6050_RANGE_16_G);
   mpu.setGyroRange(MPU6050_RANGE_250_DEG);
   mpu.setFilterBandwidth(MPU6050_BAND_21_HZ);
-  Serial.println("");
-  delay(100);
+
+  bluetooth.println("MPU6050 ready");
 }
 
 void loop() {
-
-  /* Get new sensor events with the readings */
   sensors_event_t a, g, temp;
   mpu.getEvent(&a, &g, &temp);
 
-  /* Print out the values */
-  Serial.print("AccelX:");
-  Serial.print(a.acceleration.x);
-  Serial.print(",");
-  Serial.print("AccelY:");
-  Serial.print(a.acceleration.y);
-  Serial.print(",");
-  Serial.print("AccelZ:");
-  Serial.print(a.acceleration.z);
-  Serial.print(", ");
-  Serial.print("GyroX:");
-  Serial.print(g.gyro.x);
-  Serial.print(",");
-  Serial.print("GyroY:");
-  Serial.print(g.gyro.y);
-  Serial.print(",");
-  Serial.print("GyroZ:");
-  Serial.print(g.gyro.z);
-  Serial.println("");
+  bluetooth.print("AccelX:");
+  bluetooth.print(a.acceleration.x);
+  bluetooth.print(", AccelY:");
+  bluetooth.print(a.acceleration.y);
+  bluetooth.print(", AccelZ:");
+  bluetooth.print(a.acceleration.z);
+
+  bluetooth.print(", GyroX:");
+  bluetooth.print(g.gyro.x);
+  bluetooth.print(", GyroY:");
+  bluetooth.print(g.gyro.y);
+  bluetooth.print(", GyroZ:");
+  bluetooth.println(g.gyro.z);
 
   delay(500);
 }
