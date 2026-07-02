@@ -224,7 +224,7 @@ void loop() {
   bluetooth.print(", GyroZ:");
   bluetooth.println(g.gyro.z);
 
-  delay(500);
+  delay(100);
 }
 ```
 
