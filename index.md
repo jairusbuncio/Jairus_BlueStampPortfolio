@@ -115,17 +115,14 @@ Important Connections:
 
 **CAD:**
 
-
+- This 1st CAD model shows a gyroscope assembly with a circular rotating ring mounted inside a rectangular support frame. A small gear system connects the motor to the ring, allowing the gyroscope to rotate while the surrounding pivots provide additional movement.
+- The 2nd CAD model shows a cylindrical rocket holder with a removable circular cover. The holder includes mounting holes around the rim and an opening on top for inserting the IMU schematic components inside.
+  
 ![cadimage1](chassis+gears.png)
-
-This CAD model shows a gyroscope assembly with a circular rotating ring mounted inside a rectangular support frame. A small gear system connects the motor to the ring, allowing the gyroscope to rotate while the surrounding pivots provide additional movement.
-
 ![cadimage2](RocketHolder.png)
 
-This CAD model shows a cylindrical rocket holder with a removable circular cover. The holder includes mounting holes around the rim and an opening on top for inserting the IMU schematic components inside.
 
 # Arduino IDE Code (For the Motor)
-
 ```c++
 #include <SoftwareSerial.h>
 
