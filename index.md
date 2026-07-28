@@ -81,8 +81,12 @@ With this soldering and robot building knowledge, I look forward to my main proj
 
 
 # Schematics 
+
+**Motor Schematic:**
 ![tinkercadimage1](motor.png)
-![tinkercadimage1](imu.png)
+
+**IMU Schematic:**
+![tinkercadimage2](imu.png)
 
 
 
