@@ -190,48 +190,90 @@ void loop() {
 #include <Wire.h>
 #include <SoftwareSerial.h>
 
-// HC-05 TX -> D2, HC-05 RX -> D3
-SoftwareSerial bluetooth(2, 3); 
+// HC-05 TX -> Arduino D2
+// HC-05 RX -> Arduino D3
+SoftwareSerial bluetooth(2, 3);
 
 Adafruit_MPU6050 mpu;
 
+const unsigned long UPDATE_INTERVAL_MS = 50;  // 20 updates per second
+unsigned long previousUpdate = 0;
+
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
   bluetooth.begin(9600);
 
+  Serial.println("Starting MPU6050...");
+
   if (!mpu.begin()) {
-    Serial.println("Failed to find MPU6050 chip");
-    while (1) {
+    Serial.println("Failed to find MPU6050");
+    bluetooth.println("ERROR");
+
+    while (true) {
       delay(10);
     }
   }
 
   mpu.setAccelerometerRange(MPU6050_RANGE_16_G);
   mpu.setGyroRange(MPU6050_RANGE_250_DEG);
-  mpu.setFilterBandwidth(MPU6050_BAND_21_HZ);
 
-  bluetooth.println("MPU6050 ready");
+  // Faster response than 21 Hz
+  mpu.setFilterBandwidth(MPU6050_BAND_44_HZ);
+
+  Serial.println("MPU6050 ready");
+  bluetooth.println("READY");
 }
 
 void loop() {
-  sensors_event_t a, g, temp;
-  mpu.getEvent(&a, &g, &temp);
+  unsigned long currentTime = millis();
 
-  bluetooth.print("AccelX:");
-  bluetooth.print(a.acceleration.x);
-  bluetooth.print(", AccelY:");
-  bluetooth.print(a.acceleration.y);
-  bluetooth.print(", AccelZ:");
-  bluetooth.print(a.acceleration.z);
+  if (currentTime - previousUpdate >= UPDATE_INTERVAL_MS) {
+    previousUpdate = currentTime;
 
-  bluetooth.print(", GyroX:");
-  bluetooth.print(g.gyro.x);
-  bluetooth.print(", GyroY:");
-  bluetooth.print(g.gyro.y);
-  bluetooth.print(", GyroZ:");
-  bluetooth.println(g.gyro.z);
+    sensors_event_t acceleration;
+    sensors_event_t gyro;
+    sensors_event_t temperature;
 
-  delay(100);
+    mpu.getEvent(&acceleration, &gyro, &temperature);
+
+    // Compact CSV:
+    // AccelX,AccelY,AccelZ,GyroX,GyroY,GyroZ
+
+    bluetooth.print(acceleration.acceleration.x, 2);
+    bluetooth.print(",");
+
+    bluetooth.print(acceleration.acceleration.y, 2);
+    bluetooth.print(",");
+
+    bluetooth.print(acceleration.acceleration.z, 2);
+    bluetooth.print(",");
+
+    bluetooth.print(gyro.gyro.x, 3);
+    bluetooth.print(",");
+
+    bluetooth.print(gyro.gyro.y, 3);
+    bluetooth.print(",");
+
+    bluetooth.println(gyro.gyro.z, 3);
+
+    // Optional Serial Monitor output
+    Serial.print(acceleration.acceleration.x, 2);
+    Serial.print(",");
+
+    Serial.print(acceleration.acceleration.y, 2);
+    Serial.print(",");
+
+    Serial.print(acceleration.acceleration.z, 2);
+    Serial.print(",");
+
+    Serial.print(gyro.gyro.x, 3);
+    Serial.print(",");
+
+    Serial.print(gyro.gyro.y, 3);
+    Serial.print(",");
+
+    Serial.println(gyro.gyro.z, 3);
+  }
 }
 ```
 
@@ -239,81 +281,1059 @@ void loop() {
 
 ```c++
 import tkinter as tk
+from tkinter import ttk, messagebox
 import serial
-
-# Connect to HC-06 Bluetooth
-bluetooth = serial.Serial("/dev/cu.HC-06", 9600)
-
-# Colors
-BLUE = "#0B3D91"
-YELLOW = "#FFD100"
-
-# Commands
+import serial.tools.list_ports
+import threading
+import queue
+import math
+import re
+import time
+from collections import deque
 
 
-def forward_slow():
-    bluetooth.write(b'F')
+BAUD = 9600
+HISTORY_LENGTH = 120
+DATA_TIMEOUT = 1.5
 
 
-def forward_fast():
-    bluetooth.write(b'G')
+class Dashboard:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Gyroscope Dashboard")
+        self.root.geometry("1000x720")
+        self.root.minsize(900, 650)
+
+        self.imu = None
+        self.motor = None
+        self.running = True
+        self.imu_queue = queue.Queue()
+        self.last_imu_data = 0
+
+        self.gx_history = deque(maxlen=HISTORY_LENGTH)
+        self.gy_history = deque(maxlen=HISTORY_LENGTH)
+        self.gz_history = deque(maxlen=HISTORY_LENGTH)
+
+        self.latest_gx = 0
+        self.latest_gy = 0
+        self.latest_gz = 0
+
+        self.build_interface()
+        self.refresh_ports()
+
+        self.root.after(20, self.update_imu)
+        self.root.after(100, self.draw_graph)
+        self.root.after(500, self.check_imu_status)
+
+        self.root.protocol("WM_DELETE_WINDOW", self.close)
+
+    # ========================================================
+    # INTERFACE
+    # ========================================================
+
+    def build_interface(self):
+        tk.Label(
+            self.root,
+            text="Motor and IMU Dashboard",
+            font=("Arial", 22, "bold")
+        ).pack(pady=10)
+
+        connection_frame = tk.LabelFrame(
+            self.root,
+            text="Bluetooth Connections",
+            padx=10,
+            pady=10
+        )
+        connection_frame.pack(fill="x", padx=15)
+
+        # HC-05 IMU connection
+        tk.Label(
+            connection_frame,
+            text="HC-05 IMU:"
+        ).grid(row=0, column=0, padx=5, pady=5)
+
+        self.imu_port = ttk.Combobox(
+            connection_frame,
+            width=30,
+            state="readonly"
+        )
+        self.imu_port.grid(row=0, column=1, padx=5)
+
+        tk.Button(
+            connection_frame,
+            text="Connect",
+            command=self.connect_imu
+        ).grid(row=0, column=2, padx=5)
+
+        tk.Button(
+            connection_frame,
+            text="Disconnect",
+            command=self.disconnect_imu
+        ).grid(row=0, column=3, padx=5)
+
+        self.imu_status = tk.Label(
+            connection_frame,
+            text="Disconnected",
+            fg="red",
+            width=22
+        )
+        self.imu_status.grid(row=0, column=4, padx=5)
+
+        # HC-06 motor connection
+        tk.Label(
+            connection_frame,
+            text="HC-06 Motor:"
+        ).grid(row=1, column=0, padx=5, pady=5)
+
+        self.motor_port = ttk.Combobox(
+            connection_frame,
+            width=30,
+            state="readonly"
+        )
+        self.motor_port.grid(row=1, column=1, padx=5)
+
+        tk.Button(
+            connection_frame,
+            text="Connect",
+            command=self.connect_motor
+        ).grid(row=1, column=2, padx=5)
+
+        tk.Button(
+            connection_frame,
+            text="Disconnect",
+            command=self.disconnect_motor
+        ).grid(row=1, column=3, padx=5)
+
+        self.motor_status = tk.Label(
+            connection_frame,
+            text="Disconnected",
+            fg="red",
+            width=22
+        )
+        self.motor_status.grid(row=1, column=4, padx=5)
+
+        tk.Button(
+            connection_frame,
+            text="Refresh Ports",
+            command=self.refresh_ports
+        ).grid(row=0, column=5, rowspan=2, padx=10)
+
+        main_frame = tk.Frame(self.root)
+        main_frame.pack(
+            fill="both",
+            expand=True,
+            padx=15,
+            pady=10
+        )
+
+        self.build_motor_controls(main_frame)
+        self.build_imu_display(main_frame)
+
+        self.raw_label = tk.Label(
+            self.root,
+            text="Waiting for IMU data...",
+            anchor="w"
+        )
+        self.raw_label.pack(
+            fill="x",
+            padx=15,
+            pady=(0, 8)
+        )
+
+    # ========================================================
+    # MOTOR CONTROLS
+    # ========================================================
+
+    def build_motor_controls(self, parent):
+        motor_frame = tk.LabelFrame(
+            parent,
+            text="Motor Controls",
+            padx=15,
+            pady=15
+        )
+        motor_frame.pack(
+            side="left",
+            fill="y",
+            padx=(0, 10)
+        )
+
+        self.add_motor_button(
+            motor_frame,
+            "Forward Fast",
+            "G"
+        )
+
+        self.add_motor_button(
+            motor_frame,
+            "Forward Slow",
+            "F"
+        )
+
+        tk.Button(
+            motor_frame,
+            text="STOP",
+            command=lambda: self.send_motor("S"),
+            width=16,
+            height=2,
+            bg="red",
+            fg="white",
+            font=("Arial", 13, "bold")
+        ).pack(pady=12)
+
+        self.add_motor_button(
+            motor_frame,
+            "Backward Slow",
+            "B"
+        )
+
+        self.add_motor_button(
+            motor_frame,
+            "Backward Fast",
+            "H"
+        )
+
+        self.motor_message = tk.StringVar(
+            value="Motor stopped"
+        )
+
+        tk.Label(
+            motor_frame,
+            textvariable=self.motor_message,
+            font=("Arial", 11, "bold")
+        ).pack(pady=15)
+
+    def add_motor_button(self, parent, text, command):
+        tk.Button(
+            parent,
+            text=text,
+            command=lambda: self.send_motor(command),
+            width=16,
+            height=2
+        ).pack(pady=5)
+
+    # ========================================================
+    # IMU DISPLAY
+    # ========================================================
+
+    def build_imu_display(self, parent):
+        imu_frame = tk.LabelFrame(
+            parent,
+            text="Live IMU Data",
+            padx=12,
+            pady=10
+        )
+        imu_frame.pack(
+            side="left",
+            fill="both",
+            expand=True
+        )
+
+        readings = tk.Frame(imu_frame)
+        readings.pack(fill="x")
+
+        self.values = {
+            "Accel X": tk.StringVar(value="0.00 m/s²"),
+            "Accel Y": tk.StringVar(value="0.00 m/s²"),
+            "Accel Z": tk.StringVar(value="0.00 m/s²"),
+            "Accel Total": tk.StringVar(value="0.00 m/s²"),
+            "Gyro X": tk.StringVar(value="0.00°/s"),
+            "Gyro Y": tk.StringVar(value="0.00°/s"),
+            "Gyro Z": tk.StringVar(value="0.00°/s"),
+            "Roll": tk.StringVar(value="0.00°"),
+            "Pitch": tk.StringVar(value="0.00°")
+        }
+
+        # Acceleration values in one column
+        accel_box = tk.LabelFrame(
+            readings,
+            text="Acceleration",
+            padx=15,
+            pady=10
+        )
+        accel_box.grid(
+            row=0,
+            column=0,
+            padx=8,
+            sticky="nsew"
+        )
+
+        self.add_value_row(
+            accel_box,
+            "X:",
+            self.values["Accel X"],
+            0
+        )
+        self.add_value_row(
+            accel_box,
+            "Y:",
+            self.values["Accel Y"],
+            1
+        )
+        self.add_value_row(
+            accel_box,
+            "Z:",
+            self.values["Accel Z"],
+            2
+        )
+        self.add_value_row(
+            accel_box,
+            "Total:",
+            self.values["Accel Total"],
+            3
+        )
+
+        # Gyroscope values in one column
+        gyro_box = tk.LabelFrame(
+            readings,
+            text="Gyroscope",
+            padx=15,
+            pady=10
+        )
+        gyro_box.grid(
+            row=0,
+            column=1,
+            padx=8,
+            sticky="nsew"
+        )
+
+        self.add_value_row(
+            gyro_box,
+            "X:",
+            self.values["Gyro X"],
+            0
+        )
+        self.add_value_row(
+            gyro_box,
+            "Y:",
+            self.values["Gyro Y"],
+            1
+        )
+        self.add_value_row(
+            gyro_box,
+            "Z:",
+            self.values["Gyro Z"],
+            2
+        )
+
+        # Orientation values
+        orientation_box = tk.LabelFrame(
+            readings,
+            text="Orientation",
+            padx=15,
+            pady=10
+        )
+        orientation_box.grid(
+            row=0,
+            column=2,
+            padx=8,
+            sticky="nsew"
+        )
+
+        self.add_value_row(
+            orientation_box,
+            "Roll:",
+            self.values["Roll"],
+            0
+        )
+        self.add_value_row(
+            orientation_box,
+            "Pitch:",
+            self.values["Pitch"],
+            1
+        )
+
+        readings.columnconfigure(0, weight=1)
+        readings.columnconfigure(1, weight=1)
+        readings.columnconfigure(2, weight=1)
+
+        graph_header = tk.Frame(imu_frame)
+        graph_header.pack(
+            fill="x",
+            pady=(15, 3)
+        )
+
+        tk.Label(
+            graph_header,
+            text="Gyroscope Rotation Speed",
+            font=("Arial", 12, "bold")
+        ).pack(side="left")
+
+        tk.Button(
+            graph_header,
+            text="Clear Graph",
+            command=self.clear_graph
+        ).pack(side="right")
+
+        tk.Label(
+            imu_frame,
+            text=(
+                "The graph automatically changes scale based on "
+                "the recent rotation speed."
+            ),
+            fg="gray"
+        ).pack()
+
+        self.graph = tk.Canvas(
+            imu_frame,
+            height=350,
+            bg="white",
+            highlightthickness=1,
+            highlightbackground="gray"
+        )
+        self.graph.pack(
+            fill="both",
+            expand=True,
+            pady=5
+        )
+
+    def add_value_row(self, parent, label, variable, row):
+        tk.Label(
+            parent,
+            text=label,
+            font=("Arial", 11, "bold")
+        ).grid(
+            row=row,
+            column=0,
+            sticky="e",
+            padx=5,
+            pady=4
+        )
+
+        tk.Label(
+            parent,
+            textvariable=variable,
+            width=15,
+            anchor="w"
+        ).grid(
+            row=row,
+            column=1,
+            sticky="w",
+            padx=5,
+            pady=4
+        )
+
+    # ========================================================
+    # BLUETOOTH PORTS
+    # ========================================================
+
+    def refresh_ports(self):
+        ports = [
+            port.device
+            for port in serial.tools.list_ports.comports()
+        ]
+
+        self.imu_port["values"] = ports
+        self.motor_port["values"] = ports
+
+        for port in ports:
+            name = port.upper()
+
+            if "HC-05" in name or "HC05" in name:
+                self.imu_port.set(port)
+
+            if "HC-06" in name or "HC06" in name:
+                self.motor_port.set(port)
+
+    # ========================================================
+    # HC-05 IMU CONNECTION
+    # ========================================================
+
+    def connect_imu(self):
+        port = self.imu_port.get()
+
+        if not port:
+            messagebox.showerror(
+                "HC-05",
+                "Select the HC-05 port."
+            )
+            return
+
+        if (
+            self.motor
+            and self.motor.is_open
+            and port == self.motor.port
+        ):
+            messagebox.showerror(
+                "Incorrect Port",
+                "HC-05 and HC-06 cannot use the same port."
+            )
+            return
+
+        self.disconnect_imu()
+
+        try:
+            connection = serial.Serial(
+                port,
+                BAUD,
+                timeout=0.1
+            )
+
+            connection.reset_input_buffer()
+            self.imu = connection
+            self.last_imu_data = 0
+
+            self.imu_status.config(
+                text="Waiting for data",
+                fg="orange"
+            )
+
+            threading.Thread(
+                target=self.read_imu,
+                args=(connection,),
+                daemon=True
+            ).start()
+
+        except serial.SerialException as error:
+            messagebox.showerror(
+                "HC-05 Error",
+                str(error)
+            )
+
+    def read_imu(self, connection):
+        while (
+            self.running
+            and self.imu is connection
+            and connection.is_open
+        ):
+            try:
+                line = connection.readline().decode(
+                    errors="ignore"
+                ).strip()
+
+                if line:
+                    self.imu_queue.put(line)
+
+            except serial.SerialException:
+                break
+
+    def disconnect_imu(self):
+        connection = self.imu
+        self.imu = None
+
+        if connection:
+            try:
+                connection.close()
+            except serial.SerialException:
+                pass
+
+        if hasattr(self, "imu_status"):
+            self.imu_status.config(
+                text="Disconnected",
+                fg="red"
+            )
+
+    # ========================================================
+    # IMU DATA
+    # ========================================================
+
+    def update_imu(self):
+        try:
+            while True:
+                line = self.imu_queue.get_nowait()
+                data = self.parse_imu(line)
+
+                if data and self.imu:
+                    self.show_imu(data)
+                    self.last_imu_data = time.monotonic()
+
+                    self.imu_status.config(
+                        text="Connected — data active",
+                        fg="green"
+                    )
+
+                    self.raw_label.config(
+                        text=f"IMU data: {line}"
+                    )
+                else:
+                    self.raw_label.config(
+                        text=f"Unrecognized data: {line}"
+                    )
+
+        except queue.Empty:
+            pass
+
+        if self.running:
+            self.root.after(20, self.update_imu)
+
+    def check_imu_status(self):
+        if self.imu and self.imu.is_open:
+            if self.last_imu_data == 0:
+                self.imu_status.config(
+                    text="Waiting for data",
+                    fg="orange"
+                )
+
+            elif (
+                time.monotonic() - self.last_imu_data
+                > DATA_TIMEOUT
+            ):
+                self.imu_status.config(
+                    text="Connected — data stopped",
+                    fg="orange"
+                )
+
+        if self.running:
+            self.root.after(500, self.check_imu_status)
+
+    def parse_imu(self, line):
+        # Compact format:
+        # ax,ay,az,gx,gy,gz
+
+        parts = [
+            part.strip()
+            for part in line.split(",")
+        ]
+
+        if len(parts) == 6:
+            try:
+                return list(map(float, parts))
+            except ValueError:
+                pass
+
+        # Original labeled format
+        number = (
+            r"[-+]?"
+            r"(?:\d+(?:\.\d*)?|\.\d+)"
+            r"(?:[eE][-+]?\d+)?"
+        )
+
+        matches = re.findall(
+            rf"(AccelX|AccelY|AccelZ|"
+            rf"GyroX|GyroY|GyroZ)"
+            rf"\s*:\s*({number})",
+            line
+        )
+
+        values = {
+            name: float(value)
+            for name, value in matches
+        }
+
+        names = [
+            "AccelX",
+            "AccelY",
+            "AccelZ",
+            "GyroX",
+            "GyroY",
+            "GyroZ"
+        ]
+
+        if all(name in values for name in names):
+            return [
+                values[name]
+                for name in names
+            ]
+
+        return None
+
+    def show_imu(self, data):
+        ax, ay, az, gx, gy, gz = data
+
+        # Convert radians/second to degrees/second
+        gx = math.degrees(gx)
+        gy = math.degrees(gy)
+        gz = math.degrees(gz)
+
+        accel_total = math.sqrt(
+            ax ** 2 + ay ** 2 + az ** 2
+        )
+
+        roll = math.degrees(
+            math.atan2(ay, az)
+        )
+
+        pitch = math.degrees(
+            math.atan2(
+                -ax,
+                math.sqrt(ay ** 2 + az ** 2)
+            )
+        )
+
+        self.values["Accel X"].set(
+            f"{ax:.2f} m/s²"
+        )
+        self.values["Accel Y"].set(
+            f"{ay:.2f} m/s²"
+        )
+        self.values["Accel Z"].set(
+            f"{az:.2f} m/s²"
+        )
+        self.values["Accel Total"].set(
+            f"{accel_total:.2f} m/s²"
+        )
+
+        self.values["Gyro X"].set(
+            f"{gx:.2f}°/s"
+        )
+        self.values["Gyro Y"].set(
+            f"{gy:.2f}°/s"
+        )
+        self.values["Gyro Z"].set(
+            f"{gz:.2f}°/s"
+        )
+
+        self.values["Roll"].set(
+            f"{roll:.2f}°"
+        )
+        self.values["Pitch"].set(
+            f"{pitch:.2f}°"
+        )
+
+        self.latest_gx = gx
+        self.latest_gy = gy
+        self.latest_gz = gz
+
+        self.gx_history.append(gx)
+        self.gy_history.append(gy)
+        self.gz_history.append(gz)
+
+    # ========================================================
+    # HC-06 MOTOR
+    # ========================================================
+
+    def connect_motor(self):
+        port = self.motor_port.get()
+
+        if not port:
+            messagebox.showerror(
+                "HC-06",
+                "Select the HC-06 port."
+            )
+            return
+
+        if (
+            self.imu
+            and self.imu.is_open
+            and port == self.imu.port
+        ):
+            messagebox.showerror(
+                "Incorrect Port",
+                "HC-05 and HC-06 cannot use the same port."
+            )
+            return
+
+        self.disconnect_motor()
+
+        try:
+            self.motor = serial.Serial(
+                port,
+                BAUD,
+                timeout=0.1
+            )
+
+            self.motor_status.config(
+                text="Connected",
+                fg="green"
+            )
+
+        except serial.SerialException as error:
+            messagebox.showerror(
+                "HC-06 Error",
+                str(error)
+            )
+
+    def disconnect_motor(self):
+        connection = self.motor
+        self.motor = None
+
+        if connection:
+            try:
+                connection.write(b"S")
+                connection.close()
+            except serial.SerialException:
+                pass
+
+        if hasattr(self, "motor_status"):
+            self.motor_status.config(
+                text="Disconnected",
+                fg="red"
+            )
+
+    def send_motor(self, command):
+        if not self.motor or not self.motor.is_open:
+            messagebox.showwarning(
+                "Motor",
+                "Connect the HC-06 first."
+            )
+            return
+
+        try:
+            self.motor.write(command.encode())
+
+            command_names = {
+                "F": "Forward slow",
+                "G": "Forward fast",
+                "B": "Backward slow",
+                "H": "Backward fast",
+                "S": "Stopped"
+            }
+
+            self.motor_message.set(
+                command_names.get(command, command)
+            )
+
+        except serial.SerialException:
+            self.disconnect_motor()
+
+    # ========================================================
+    # GRAPH
+    # ========================================================
+
+    def clear_graph(self):
+        self.gx_history.clear()
+        self.gy_history.clear()
+        self.gz_history.clear()
+
+    def draw_graph(self):
+        self.graph.delete("all")
+
+        width = max(
+            self.graph.winfo_width(),
+            500
+        )
+
+        height = max(
+            self.graph.winfo_height(),
+            300
+        )
+
+        left = 65
+        right = 20
+        top = 60
+        bottom = 45
+
+        graph_width = width - left - right
+        graph_height = height - top - bottom
+
+        all_values = (
+            list(self.gx_history)
+            + list(self.gy_history)
+            + list(self.gz_history)
+        )
+
+        if all_values:
+            largest = max(
+                abs(value)
+                for value in all_values
+            )
+        else:
+            largest = 0
+
+        # Automatically adjust the vertical scale
+        scale = max(25, largest * 1.15)
+        scale = math.ceil(scale / 25) * 25
+
+        # Graph title
+        self.graph.create_text(
+            width / 2,
+            15,
+            text="Gyroscope Rotation Speed",
+            font=("Arial", 11, "bold")
+        )
+
+        # Live legend
+        legend_y = 38
+
+        self.graph.create_line(
+            left,
+            legend_y,
+            left + 25,
+            legend_y,
+            fill="red",
+            width=3
+        )
+        self.graph.create_text(
+            left + 32,
+            legend_y,
+            text=f"X: {self.latest_gx:.1f}°/s",
+            anchor="w"
+        )
+
+        self.graph.create_line(
+            left + 150,
+            legend_y,
+            left + 175,
+            legend_y,
+            fill="green",
+            width=3
+        )
+        self.graph.create_text(
+            left + 182,
+            legend_y,
+            text=f"Y: {self.latest_gy:.1f}°/s",
+            anchor="w"
+        )
+
+        self.graph.create_line(
+            left + 300,
+            legend_y,
+            left + 325,
+            legend_y,
+            fill="blue",
+            width=3
+        )
+        self.graph.create_text(
+            left + 332,
+            legend_y,
+            text=f"Z: {self.latest_gz:.1f}°/s",
+            anchor="w"
+        )
+
+        # Horizontal gridlines and Y-axis labels
+        y_values = [
+            scale,
+            scale / 2,
+            0,
+            -scale / 2,
+            -scale
+        ]
+
+        for value in y_values:
+            y = top + (
+                (scale - value)
+                / (2 * scale)
+            ) * graph_height
+
+            self.graph.create_line(
+                left,
+                y,
+                width - right,
+                y,
+                fill="#dddddd"
+            )
+
+            self.graph.create_text(
+                left - 8,
+                y,
+                text=f"{value:.0f}",
+                anchor="e"
+            )
+
+        # Vertical gridlines
+        for index in range(6):
+            x = left + (
+                index / 5
+            ) * graph_width
+
+            self.graph.create_line(
+                x,
+                top,
+                x,
+                height - bottom,
+                fill="#eeeeee"
+            )
+
+        # Y-axis title
+        self.graph.create_text(
+            18,
+            top + graph_height / 2,
+            text="Rotation speed (°/s)",
+            angle=90
+        )
+
+        # X-axis labels
+        self.graph.create_text(
+            left,
+            height - 22,
+            text="Older",
+            anchor="w"
+        )
+
+        self.graph.create_text(
+            width - right,
+            height - 22,
+            text="Newest",
+            anchor="e"
+        )
+
+        self.graph.create_text(
+            width / 2,
+            height - 12,
+            text=f"Most recent {HISTORY_LENGTH} readings"
+        )
+
+        self.draw_line(
+            self.gx_history,
+            "red",
+            left,
+            top,
+            graph_width,
+            graph_height,
+            scale
+        )
+
+        self.draw_line(
+            self.gy_history,
+            "green",
+            left,
+            top,
+            graph_width,
+            graph_height,
+            scale
+        )
+
+        self.draw_line(
+            self.gz_history,
+            "blue",
+            left,
+            top,
+            graph_width,
+            graph_height,
+            scale
+        )
+
+        if self.running:
+            self.root.after(100, self.draw_graph)
+
+    def draw_line(
+        self,
+        history,
+        color,
+        left,
+        top,
+        graph_width,
+        graph_height,
+        scale
+    ):
+        values = list(history)
+
+        if len(values) < 2:
+            return
+
+        points = []
+
+        for index, value in enumerate(values):
+            x = left + (
+                index / (len(values) - 1)
+            ) * graph_width
+
+            y = top + (
+                (scale - value)
+                / (2 * scale)
+            ) * graph_height
+
+            points.extend([x, y])
+
+        self.graph.create_line(
+            points,
+            fill=color,
+            width=2
+        )
+
+    # ========================================================
+    # CLOSE
+    # ========================================================
+
+    def close(self):
+        self.running = False
+        self.disconnect_motor()
+        self.disconnect_imu()
+        self.root.destroy()
 
 
-def backward_slow():
-    bluetooth.write(b'B')
-
-
-def backward_fast():
-    bluetooth.write(b'H')
-
-
-def stop():
-    bluetooth.write(b'S')
-
-
-# Window
 root = tk.Tk()
-root.title("Gyroscope Control")
-root.geometry("1920x1080")
-root.configure(bg=BLUE)
-
-# Title
-title = tk.Label(
-    root,
-    text="Gyroscope Control",
-    font=("Arial", 40, "bold"),
-    bg=BLUE,
-    fg=YELLOW
-)
-title.pack(pady=60)
-
-# Frame
-button_frame = tk.Frame(root, bg=BLUE)
-button_frame.pack(expand=True)
-
-# Button settings
-button_font = ("Arial", 24, "bold")
-button_width = 12
-button_height = 5
-
-# Buttons
-tk.Button(button_frame, text="Forward\n(Fast)", command=forward_fast,
-          font=button_font, width=button_width, height=button_height).grid(row=0, column=0, padx=20)
-
-tk.Button(button_frame, text="Forward\n(Slow)", command=forward_slow,
-          font=button_font, width=button_width, height=button_height).grid(row=0, column=1, padx=20)
-
-tk.Button(button_frame, text="Stop", command=stop,
-          font=button_font, width=button_width, height=button_height).grid(row=0, column=2, padx=20)
-
-tk.Button(button_frame, text="Backward\n(Slow)", command=backward_slow,
-          font=button_font, width=button_width, height=button_height).grid(row=0, column=3, padx=20)
-
-tk.Button(button_frame, text="Backward\n(Fast)", command=backward_fast,
-          font=button_font, width=button_width, height=button_height).grid(row=0, column=4, padx=20)
-
+app = Dashboard(root)
 root.mainloop()
-
 ```
 
 
