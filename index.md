@@ -93,9 +93,9 @@ This schematic includes:
 6. HC-06 Bluetooth Module
 
 Important Connections:
-Arduino UNO R3: GND -> Motor Driver GND (also has ground from batteries) and VIN -> +5V
-Motor Driver: ENA -> Digital 5, IN1 -> Digital 2, and IN2 -> Digital 3
-HC-06 Bluetooth Module: TXD -> Digital 10 and RXD -> Digital 11
+1. Arduino UNO R3: GND -> Motor Driver GND (also has ground from batteries) and VIN -> +5V
+2. Motor Driver: ENA -> Digital 5, IN1 -> Digital 2, and IN2 -> Digital 3
+3. HC-06 Bluetooth Module: TXD -> Digital 10 and RXD -> Digital 11
 
 ![tinkercadimage1](motorv2.png)
 
@@ -108,8 +108,8 @@ For this schematic, I have:
 4. HC-05 Bluetooth Module
 
 Important Connections:
-IMU Sensor: SCL -> A5 and SDA -> A4
-HC-05 Bluetooth Module: TXD -> D2 and RXD -> D3
+1. IMU Sensor: SCL -> A5 and SDA -> A4
+2. HC-05 Bluetooth Module: TXD -> D2 and RXD -> D3
 
 ![tinkercadimage2](imuv2.png)
 
