@@ -291,10 +291,9 @@ import re
 import time
 from collections import deque
 
-
 BAUD = 9600
-HISTORY_LENGTH = 120
-DATA_TIMEOUT = 1.5
+HISTORY = 120
+TIMEOUT = 1.5
 
 
 class Dashboard:
@@ -310,167 +309,110 @@ class Dashboard:
         self.imu_queue = queue.Queue()
         self.last_imu_data = 0
 
-        self.gx_history = deque(maxlen=HISTORY_LENGTH)
-        self.gy_history = deque(maxlen=HISTORY_LENGTH)
-        self.gz_history = deque(maxlen=HISTORY_LENGTH)
+        self.gx = deque(maxlen=HISTORY)
+        self.gy = deque(maxlen=HISTORY)
+        self.gz = deque(maxlen=HISTORY)
+        self.latest = [0, 0, 0]
 
-        self.latest_gx = 0
-        self.latest_gy = 0
-        self.latest_gz = 0
-
-        self.build_interface()
+        self.build_ui()
         self.refresh_ports()
 
         self.root.after(20, self.update_imu)
         self.root.after(100, self.draw_graph)
-        self.root.after(500, self.check_imu_status)
-
+        self.root.after(500, self.check_imu)
         self.root.protocol("WM_DELETE_WINDOW", self.close)
 
-    # ========================================================
-    # INTERFACE
-    # ========================================================
-
-    def build_interface(self):
+    def build_ui(self):
         tk.Label(
             self.root,
             text="Motor and IMU Dashboard",
             font=("Arial", 22, "bold")
         ).pack(pady=10)
 
-        connection_frame = tk.LabelFrame(
+        connections = tk.LabelFrame(
             self.root,
             text="Bluetooth Connections",
             padx=10,
             pady=10
         )
-        connection_frame.pack(fill="x", padx=15)
+        connections.pack(fill="x", padx=15)
 
-        # HC-05 IMU connection
-        tk.Label(
-            connection_frame,
-            text="HC-05 IMU:"
-        ).grid(row=0, column=0, padx=5, pady=5)
-
-        self.imu_port = ttk.Combobox(
-            connection_frame,
-            width=30,
-            state="readonly"
+        self.imu_port = self.connection_row(
+            connections, 0, "HC-05 IMU:", self.connect_imu,
+            self.disconnect_imu
         )
-        self.imu_port.grid(row=0, column=1, padx=5)
+        self.imu_status = self.status_label(connections, 0)
 
-        tk.Button(
-            connection_frame,
-            text="Connect",
-            command=self.connect_imu
-        ).grid(row=0, column=2, padx=5)
-
-        tk.Button(
-            connection_frame,
-            text="Disconnect",
-            command=self.disconnect_imu
-        ).grid(row=0, column=3, padx=5)
-
-        self.imu_status = tk.Label(
-            connection_frame,
-            text="Disconnected",
-            fg="red",
-            width=22
+        self.motor_port = self.connection_row(
+            connections, 1, "HC-06 Motor:", self.connect_motor,
+            self.disconnect_motor
         )
-        self.imu_status.grid(row=0, column=4, padx=5)
-
-        # HC-06 motor connection
-        tk.Label(
-            connection_frame,
-            text="HC-06 Motor:"
-        ).grid(row=1, column=0, padx=5, pady=5)
-
-        self.motor_port = ttk.Combobox(
-            connection_frame,
-            width=30,
-            state="readonly"
-        )
-        self.motor_port.grid(row=1, column=1, padx=5)
+        self.motor_status = self.status_label(connections, 1)
 
         tk.Button(
-            connection_frame,
-            text="Connect",
-            command=self.connect_motor
-        ).grid(row=1, column=2, padx=5)
-
-        tk.Button(
-            connection_frame,
-            text="Disconnect",
-            command=self.disconnect_motor
-        ).grid(row=1, column=3, padx=5)
-
-        self.motor_status = tk.Label(
-            connection_frame,
-            text="Disconnected",
-            fg="red",
-            width=22
-        )
-        self.motor_status.grid(row=1, column=4, padx=5)
-
-        tk.Button(
-            connection_frame,
+            connections,
             text="Refresh Ports",
             command=self.refresh_ports
         ).grid(row=0, column=5, rowspan=2, padx=10)
 
-        main_frame = tk.Frame(self.root)
-        main_frame.pack(
-            fill="both",
-            expand=True,
-            padx=15,
-            pady=10
-        )
+        main = tk.Frame(self.root)
+        main.pack(fill="both", expand=True, padx=15, pady=10)
 
-        self.build_motor_controls(main_frame)
-        self.build_imu_display(main_frame)
+        self.build_motor_ui(main)
+        self.build_imu_ui(main)
 
         self.raw_label = tk.Label(
             self.root,
             text="Waiting for IMU data...",
             anchor="w"
         )
-        self.raw_label.pack(
-            fill="x",
-            padx=15,
-            pady=(0, 8)
+        self.raw_label.pack(fill="x", padx=15, pady=(0, 8))
+
+    def connection_row(self, parent, row, text, connect, disconnect):
+        tk.Label(parent, text=text).grid(
+            row=row, column=0, padx=5, pady=5
         )
 
-    # ========================================================
-    # MOTOR CONTROLS
-    # ========================================================
+        box = ttk.Combobox(parent, width=30, state="readonly")
+        box.grid(row=row, column=1, padx=5)
 
-    def build_motor_controls(self, parent):
-        motor_frame = tk.LabelFrame(
+        tk.Button(
+            parent, text="Connect", command=connect
+        ).grid(row=row, column=2, padx=5)
+
+        tk.Button(
+            parent, text="Disconnect", command=disconnect
+        ).grid(row=row, column=3, padx=5)
+
+        return box
+
+    def status_label(self, parent, row):
+        label = tk.Label(
+            parent,
+            text="Disconnected",
+            fg="red",
+            width=22
+        )
+        label.grid(row=row, column=4, padx=5)
+        return label
+
+    def build_motor_ui(self, parent):
+        frame = tk.LabelFrame(
             parent,
             text="Motor Controls",
             padx=15,
             pady=15
         )
-        motor_frame.pack(
-            side="left",
-            fill="y",
-            padx=(0, 10)
-        )
+        frame.pack(side="left", fill="y", padx=(0, 10))
 
-        self.add_motor_button(
-            motor_frame,
-            "Forward Fast",
-            "G"
-        )
-
-        self.add_motor_button(
-            motor_frame,
-            "Forward Slow",
-            "F"
-        )
+        for text, command in [
+            ("Forward Fast", "G"),
+            ("Forward Slow", "F")
+        ]:
+            self.motor_button(frame, text, command)
 
         tk.Button(
-            motor_frame,
+            frame,
             text="STOP",
             command=lambda: self.send_motor("S"),
             width=16,
@@ -480,29 +422,21 @@ class Dashboard:
             font=("Arial", 13, "bold")
         ).pack(pady=12)
 
-        self.add_motor_button(
-            motor_frame,
-            "Backward Slow",
-            "B"
-        )
+        for text, command in [
+            ("Backward Slow", "B"),
+            ("Backward Fast", "H")
+        ]:
+            self.motor_button(frame, text, command)
 
-        self.add_motor_button(
-            motor_frame,
-            "Backward Fast",
-            "H"
-        )
-
-        self.motor_message = tk.StringVar(
-            value="Motor stopped"
-        )
+        self.motor_message = tk.StringVar(value="Motor stopped")
 
         tk.Label(
-            motor_frame,
+            frame,
             textvariable=self.motor_message,
             font=("Arial", 11, "bold")
         ).pack(pady=15)
 
-    def add_motor_button(self, parent, text, command):
+    def motor_button(self, parent, text, command):
         tk.Button(
             parent,
             text=text,
@@ -511,210 +445,111 @@ class Dashboard:
             height=2
         ).pack(pady=5)
 
-    # ========================================================
-    # IMU DISPLAY
-    # ========================================================
-
-    def build_imu_display(self, parent):
-        imu_frame = tk.LabelFrame(
+    def build_imu_ui(self, parent):
+        frame = tk.LabelFrame(
             parent,
             text="Live IMU Data",
             padx=12,
             pady=10
         )
-        imu_frame.pack(
-            side="left",
-            fill="both",
-            expand=True
-        )
+        frame.pack(side="left", fill="both", expand=True)
 
-        readings = tk.Frame(imu_frame)
+        readings = tk.Frame(frame)
         readings.pack(fill="x")
 
+        names = [
+            "Accel X", "Accel Y", "Accel Z", "Accel Total",
+            "Gyro X", "Gyro Y", "Gyro Z", "Roll", "Pitch"
+        ]
+
         self.values = {
-            "Accel X": tk.StringVar(value="0.00 m/s²"),
-            "Accel Y": tk.StringVar(value="0.00 m/s²"),
-            "Accel Z": tk.StringVar(value="0.00 m/s²"),
-            "Accel Total": tk.StringVar(value="0.00 m/s²"),
-            "Gyro X": tk.StringVar(value="0.00°/s"),
-            "Gyro Y": tk.StringVar(value="0.00°/s"),
-            "Gyro Z": tk.StringVar(value="0.00°/s"),
-            "Roll": tk.StringVar(value="0.00°"),
-            "Pitch": tk.StringVar(value="0.00°")
+            name: tk.StringVar(value="0.00")
+            for name in names
         }
 
-        # Acceleration values in one column
-        accel_box = tk.LabelFrame(
+        self.value_box(
             readings,
-            text="Acceleration",
-            padx=15,
-            pady=10
-        )
-        accel_box.grid(
-            row=0,
-            column=0,
-            padx=8,
-            sticky="nsew"
-        )
-
-        self.add_value_row(
-            accel_box,
-            "X:",
-            self.values["Accel X"],
-            0
-        )
-        self.add_value_row(
-            accel_box,
-            "Y:",
-            self.values["Accel Y"],
-            1
-        )
-        self.add_value_row(
-            accel_box,
-            "Z:",
-            self.values["Accel Z"],
-            2
-        )
-        self.add_value_row(
-            accel_box,
-            "Total:",
-            self.values["Accel Total"],
-            3
+            0,
+            "Acceleration",
+            [
+                ("X:", "Accel X"),
+                ("Y:", "Accel Y"),
+                ("Z:", "Accel Z"),
+                ("Total:", "Accel Total")
+            ]
         )
 
-        # Gyroscope values in one column
-        gyro_box = tk.LabelFrame(
+        self.value_box(
             readings,
-            text="Gyroscope",
-            padx=15,
-            pady=10
-        )
-        gyro_box.grid(
-            row=0,
-            column=1,
-            padx=8,
-            sticky="nsew"
+            1,
+            "Gyroscope",
+            [
+                ("X:", "Gyro X"),
+                ("Y:", "Gyro Y"),
+                ("Z:", "Gyro Z")
+            ]
         )
 
-        self.add_value_row(
-            gyro_box,
-            "X:",
-            self.values["Gyro X"],
-            0
-        )
-        self.add_value_row(
-            gyro_box,
-            "Y:",
-            self.values["Gyro Y"],
-            1
-        )
-        self.add_value_row(
-            gyro_box,
-            "Z:",
-            self.values["Gyro Z"],
-            2
-        )
-
-        # Orientation values
-        orientation_box = tk.LabelFrame(
+        self.value_box(
             readings,
-            text="Orientation",
-            padx=15,
-            pady=10
-        )
-        orientation_box.grid(
-            row=0,
-            column=2,
-            padx=8,
-            sticky="nsew"
+            2,
+            "Orientation",
+            [
+                ("Roll:", "Roll"),
+                ("Pitch:", "Pitch")
+            ]
         )
 
-        self.add_value_row(
-            orientation_box,
-            "Roll:",
-            self.values["Roll"],
-            0
-        )
-        self.add_value_row(
-            orientation_box,
-            "Pitch:",
-            self.values["Pitch"],
-            1
-        )
+        for column in range(3):
+            readings.columnconfigure(column, weight=1)
 
-        readings.columnconfigure(0, weight=1)
-        readings.columnconfigure(1, weight=1)
-        readings.columnconfigure(2, weight=1)
-
-        graph_header = tk.Frame(imu_frame)
-        graph_header.pack(
-            fill="x",
-            pady=(15, 3)
-        )
+        header = tk.Frame(frame)
+        header.pack(fill="x", pady=(15, 3))
 
         tk.Label(
-            graph_header,
+            header,
             text="Gyroscope Rotation Speed",
             font=("Arial", 12, "bold")
         ).pack(side="left")
 
         tk.Button(
-            graph_header,
+            header,
             text="Clear Graph",
             command=self.clear_graph
         ).pack(side="right")
 
         tk.Label(
-            imu_frame,
-            text=(
-                "The graph automatically changes scale based on "
-                "the recent rotation speed."
-            ),
+            frame,
+            text="The scale adjusts automatically to recent rotation speeds.",
             fg="gray"
         ).pack()
 
         self.graph = tk.Canvas(
-            imu_frame,
+            frame,
             height=350,
             bg="white",
             highlightthickness=1,
             highlightbackground="gray"
         )
-        self.graph.pack(
-            fill="both",
-            expand=True,
-            pady=5
-        )
+        self.graph.pack(fill="both", expand=True, pady=5)
 
-    def add_value_row(self, parent, label, variable, row):
-        tk.Label(
-            parent,
-            text=label,
-            font=("Arial", 11, "bold")
-        ).grid(
-            row=row,
-            column=0,
-            sticky="e",
-            padx=5,
-            pady=4
-        )
+    def value_box(self, parent, column, title, rows):
+        box = tk.LabelFrame(parent, text=title, padx=15, pady=10)
+        box.grid(row=0, column=column, padx=8, sticky="nsew")
 
-        tk.Label(
-            parent,
-            textvariable=variable,
-            width=15,
-            anchor="w"
-        ).grid(
-            row=row,
-            column=1,
-            sticky="w",
-            padx=5,
-            pady=4
-        )
+        for row, (label, key) in enumerate(rows):
+            tk.Label(
+                box,
+                text=label,
+                font=("Arial", 11, "bold")
+            ).grid(row=row, column=0, sticky="e", padx=5, pady=4)
 
-    # ========================================================
-    # BLUETOOTH PORTS
-    # ========================================================
+            tk.Label(
+                box,
+                textvariable=self.values[key],
+                width=15,
+                anchor="w"
+            ).grid(row=row, column=1, sticky="w", padx=5, pady=4)
 
     def refresh_ports(self):
         ports = [
@@ -734,25 +569,14 @@ class Dashboard:
             if "HC-06" in name or "HC06" in name:
                 self.motor_port.set(port)
 
-    # ========================================================
-    # HC-05 IMU CONNECTION
-    # ========================================================
-
     def connect_imu(self):
         port = self.imu_port.get()
 
         if not port:
-            messagebox.showerror(
-                "HC-05",
-                "Select the HC-05 port."
-            )
+            messagebox.showerror("HC-05", "Select the HC-05 port.")
             return
 
-        if (
-            self.motor
-            and self.motor.is_open
-            and port == self.motor.port
-        ):
+        if self.motor and self.motor.is_open and port == self.motor.port:
             messagebox.showerror(
                 "Incorrect Port",
                 "HC-05 and HC-06 cannot use the same port."
@@ -762,16 +586,11 @@ class Dashboard:
         self.disconnect_imu()
 
         try:
-            connection = serial.Serial(
-                port,
-                BAUD,
-                timeout=0.1
-            )
-
+            connection = serial.Serial(port, BAUD, timeout=0.1)
             connection.reset_input_buffer()
+
             self.imu = connection
             self.last_imu_data = 0
-
             self.imu_status.config(
                 text="Waiting for data",
                 fg="orange"
@@ -784,10 +603,7 @@ class Dashboard:
             ).start()
 
         except serial.SerialException as error:
-            messagebox.showerror(
-                "HC-05 Error",
-                str(error)
-            )
+            messagebox.showerror("HC-05 Error", str(error))
 
     def read_imu(self, connection):
         while (
@@ -822,10 +638,6 @@ class Dashboard:
                 fg="red"
             )
 
-    # ========================================================
-    # IMU DATA
-    # ========================================================
-
     def update_imu(self):
         try:
             while True:
@@ -840,10 +652,8 @@ class Dashboard:
                         text="Connected — data active",
                         fg="green"
                     )
+                    self.raw_label.config(text=f"IMU data: {line}")
 
-                    self.raw_label.config(
-                        text=f"IMU data: {line}"
-                    )
                 else:
                     self.raw_label.config(
                         text=f"Unrecognized data: {line}"
@@ -855,7 +665,7 @@ class Dashboard:
         if self.running:
             self.root.after(20, self.update_imu)
 
-    def check_imu_status(self):
+    def check_imu(self):
         if self.imu and self.imu.is_open:
             if self.last_imu_data == 0:
                 self.imu_status.config(
@@ -863,26 +673,17 @@ class Dashboard:
                     fg="orange"
                 )
 
-            elif (
-                time.monotonic() - self.last_imu_data
-                > DATA_TIMEOUT
-            ):
+            elif time.monotonic() - self.last_imu_data > TIMEOUT:
                 self.imu_status.config(
                     text="Connected — data stopped",
                     fg="orange"
                 )
 
         if self.running:
-            self.root.after(500, self.check_imu_status)
+            self.root.after(500, self.check_imu)
 
     def parse_imu(self, line):
-        # Compact format:
-        # ax,ay,az,gx,gy,gz
-
-        parts = [
-            part.strip()
-            for part in line.split(",")
-        ]
+        parts = [part.strip() for part in line.split(",")]
 
         if len(parts) == 6:
             try:
@@ -890,16 +691,13 @@ class Dashboard:
             except ValueError:
                 pass
 
-        # Original labeled format
         number = (
-            r"[-+]?"
-            r"(?:\d+(?:\.\d*)?|\.\d+)"
+            r"[-+]?(?:\d+(?:\.\d*)?|\.\d+)"
             r"(?:[eE][-+]?\d+)?"
         )
 
         matches = re.findall(
-            rf"(AccelX|AccelY|AccelZ|"
-            rf"GyroX|GyroY|GyroZ)"
+            rf"(AccelX|AccelY|AccelZ|GyroX|GyroY|GyroZ)"
             rf"\s*:\s*({number})",
             line
         )
@@ -910,102 +708,53 @@ class Dashboard:
         }
 
         names = [
-            "AccelX",
-            "AccelY",
-            "AccelZ",
-            "GyroX",
-            "GyroY",
-            "GyroZ"
+            "AccelX", "AccelY", "AccelZ",
+            "GyroX", "GyroY", "GyroZ"
         ]
 
         if all(name in values for name in names):
-            return [
-                values[name]
-                for name in names
-            ]
+            return [values[name] for name in names]
 
         return None
 
     def show_imu(self, data):
         ax, ay, az, gx, gy, gz = data
+        gx, gy, gz = map(math.degrees, (gx, gy, gz))
 
-        # Convert radians/second to degrees/second
-        gx = math.degrees(gx)
-        gy = math.degrees(gy)
-        gz = math.degrees(gz)
-
-        accel_total = math.sqrt(
-            ax ** 2 + ay ** 2 + az ** 2
-        )
-
-        roll = math.degrees(
-            math.atan2(ay, az)
-        )
-
+        total = math.sqrt(ax ** 2 + ay ** 2 + az ** 2)
+        roll = math.degrees(math.atan2(ay, az))
         pitch = math.degrees(
-            math.atan2(
-                -ax,
-                math.sqrt(ay ** 2 + az ** 2)
-            )
+            math.atan2(-ax, math.sqrt(ay ** 2 + az ** 2))
         )
 
-        self.values["Accel X"].set(
-            f"{ax:.2f} m/s²"
-        )
-        self.values["Accel Y"].set(
-            f"{ay:.2f} m/s²"
-        )
-        self.values["Accel Z"].set(
-            f"{az:.2f} m/s²"
-        )
-        self.values["Accel Total"].set(
-            f"{accel_total:.2f} m/s²"
-        )
+        updates = {
+            "Accel X": f"{ax:.2f} m/s²",
+            "Accel Y": f"{ay:.2f} m/s²",
+            "Accel Z": f"{az:.2f} m/s²",
+            "Accel Total": f"{total:.2f} m/s²",
+            "Gyro X": f"{gx:.2f}°/s",
+            "Gyro Y": f"{gy:.2f}°/s",
+            "Gyro Z": f"{gz:.2f}°/s",
+            "Roll": f"{roll:.2f}°",
+            "Pitch": f"{pitch:.2f}°"
+        }
 
-        self.values["Gyro X"].set(
-            f"{gx:.2f}°/s"
-        )
-        self.values["Gyro Y"].set(
-            f"{gy:.2f}°/s"
-        )
-        self.values["Gyro Z"].set(
-            f"{gz:.2f}°/s"
-        )
+        for name, value in updates.items():
+            self.values[name].set(value)
 
-        self.values["Roll"].set(
-            f"{roll:.2f}°"
-        )
-        self.values["Pitch"].set(
-            f"{pitch:.2f}°"
-        )
-
-        self.latest_gx = gx
-        self.latest_gy = gy
-        self.latest_gz = gz
-
-        self.gx_history.append(gx)
-        self.gy_history.append(gy)
-        self.gz_history.append(gz)
-
-    # ========================================================
-    # HC-06 MOTOR
-    # ========================================================
+        self.latest = [gx, gy, gz]
+        self.gx.append(gx)
+        self.gy.append(gy)
+        self.gz.append(gz)
 
     def connect_motor(self):
         port = self.motor_port.get()
 
         if not port:
-            messagebox.showerror(
-                "HC-06",
-                "Select the HC-06 port."
-            )
+            messagebox.showerror("HC-06", "Select the HC-06 port.")
             return
 
-        if (
-            self.imu
-            and self.imu.is_open
-            and port == self.imu.port
-        ):
+        if self.imu and self.imu.is_open and port == self.imu.port:
             messagebox.showerror(
                 "Incorrect Port",
                 "HC-05 and HC-06 cannot use the same port."
@@ -1015,22 +764,14 @@ class Dashboard:
         self.disconnect_motor()
 
         try:
-            self.motor = serial.Serial(
-                port,
-                BAUD,
-                timeout=0.1
-            )
-
+            self.motor = serial.Serial(port, BAUD, timeout=0.1)
             self.motor_status.config(
                 text="Connected",
                 fg="green"
             )
 
         except serial.SerialException as error:
-            messagebox.showerror(
-                "HC-06 Error",
-                str(error)
-            )
+            messagebox.showerror("HC-06 Error", str(error))
 
     def disconnect_motor(self):
         connection = self.motor
@@ -1060,7 +801,7 @@ class Dashboard:
         try:
             self.motor.write(command.encode())
 
-            command_names = {
+            names = {
                 "F": "Forward slow",
                 "G": "Forward fast",
                 "B": "Backward slow",
@@ -1068,62 +809,30 @@ class Dashboard:
                 "S": "Stopped"
             }
 
-            self.motor_message.set(
-                command_names.get(command, command)
-            )
+            self.motor_message.set(names.get(command, command))
 
         except serial.SerialException:
             self.disconnect_motor()
 
-    # ========================================================
-    # GRAPH
-    # ========================================================
-
     def clear_graph(self):
-        self.gx_history.clear()
-        self.gy_history.clear()
-        self.gz_history.clear()
+        self.gx.clear()
+        self.gy.clear()
+        self.gz.clear()
 
     def draw_graph(self):
         self.graph.delete("all")
 
-        width = max(
-            self.graph.winfo_width(),
-            500
-        )
+        width = max(self.graph.winfo_width(), 500)
+        height = max(self.graph.winfo_height(), 300)
 
-        height = max(
-            self.graph.winfo_height(),
-            300
-        )
-
-        left = 65
-        right = 20
-        top = 60
-        bottom = 45
-
+        left, right, top, bottom = 65, 20, 60, 45
         graph_width = width - left - right
         graph_height = height - top - bottom
 
-        all_values = (
-            list(self.gx_history)
-            + list(self.gy_history)
-            + list(self.gz_history)
-        )
+        values = list(self.gx) + list(self.gy) + list(self.gz)
+        largest = max((abs(value) for value in values), default=0)
+        scale = max(25, math.ceil(largest * 1.15 / 25) * 25)
 
-        if all_values:
-            largest = max(
-                abs(value)
-                for value in all_values
-            )
-        else:
-            largest = 0
-
-        # Automatically adjust the vertical scale
-        scale = max(25, largest * 1.15)
-        scale = math.ceil(scale / 25) * 25
-
-        # Graph title
         self.graph.create_text(
             width / 2,
             15,
@@ -1131,68 +840,28 @@ class Dashboard:
             font=("Arial", 11, "bold")
         )
 
-        # Live legend
-        legend_y = 38
+        colors = ["red", "green", "blue"]
+        names = ["X", "Y", "Z"]
 
-        self.graph.create_line(
-            left,
-            legend_y,
-            left + 25,
-            legend_y,
-            fill="red",
-            width=3
-        )
-        self.graph.create_text(
-            left + 32,
-            legend_y,
-            text=f"X: {self.latest_gx:.1f}°/s",
-            anchor="w"
-        )
+        for index, (name, color, value) in enumerate(
+            zip(names, colors, self.latest)
+        ):
+            x = left + index * 150
 
-        self.graph.create_line(
-            left + 150,
-            legend_y,
-            left + 175,
-            legend_y,
-            fill="green",
-            width=3
-        )
-        self.graph.create_text(
-            left + 182,
-            legend_y,
-            text=f"Y: {self.latest_gy:.1f}°/s",
-            anchor="w"
-        )
+            self.graph.create_line(
+                x, 38, x + 25, 38,
+                fill=color,
+                width=3
+            )
+            self.graph.create_text(
+                x + 32,
+                38,
+                text=f"{name}: {value:.1f}°/s",
+                anchor="w"
+            )
 
-        self.graph.create_line(
-            left + 300,
-            legend_y,
-            left + 325,
-            legend_y,
-            fill="blue",
-            width=3
-        )
-        self.graph.create_text(
-            left + 332,
-            legend_y,
-            text=f"Z: {self.latest_gz:.1f}°/s",
-            anchor="w"
-        )
-
-        # Horizontal gridlines and Y-axis labels
-        y_values = [
-            scale,
-            scale / 2,
-            0,
-            -scale / 2,
-            -scale
-        ]
-
-        for value in y_values:
-            y = top + (
-                (scale - value)
-                / (2 * scale)
-            ) * graph_height
+        for value in [scale, scale / 2, 0, -scale / 2, -scale]:
+            y = top + (scale - value) / (2 * scale) * graph_height
 
             self.graph.create_line(
                 left,
@@ -1201,7 +870,6 @@ class Dashboard:
                 y,
                 fill="#dddddd"
             )
-
             self.graph.create_text(
                 left - 8,
                 y,
@@ -1209,11 +877,8 @@ class Dashboard:
                 anchor="e"
             )
 
-        # Vertical gridlines
         for index in range(6):
-            x = left + (
-                index / 5
-            ) * graph_width
+            x = left + index / 5 * graph_width
 
             self.graph.create_line(
                 x,
@@ -1223,7 +888,6 @@ class Dashboard:
                 fill="#eeeeee"
             )
 
-        # Y-axis title
         self.graph.create_text(
             18,
             top + graph_height / 2,
@@ -1231,7 +895,6 @@ class Dashboard:
             angle=90
         )
 
-        # X-axis labels
         self.graph.create_text(
             left,
             height - 22,
@@ -1249,38 +912,22 @@ class Dashboard:
         self.graph.create_text(
             width / 2,
             height - 12,
-            text=f"Most recent {HISTORY_LENGTH} readings"
+            text=f"Most recent {HISTORY} readings"
         )
 
-        self.draw_line(
-            self.gx_history,
-            "red",
-            left,
-            top,
-            graph_width,
-            graph_height,
-            scale
-        )
-
-        self.draw_line(
-            self.gy_history,
-            "green",
-            left,
-            top,
-            graph_width,
-            graph_height,
-            scale
-        )
-
-        self.draw_line(
-            self.gz_history,
-            "blue",
-            left,
-            top,
-            graph_width,
-            graph_height,
-            scale
-        )
+        for history, color in zip(
+            [self.gx, self.gy, self.gz],
+            colors
+        ):
+            self.draw_line(
+                history,
+                color,
+                left,
+                top,
+                graph_width,
+                graph_height,
+                scale
+            )
 
         if self.running:
             self.root.after(100, self.draw_graph)
@@ -1291,8 +938,8 @@ class Dashboard:
         color,
         left,
         top,
-        graph_width,
-        graph_height,
+        width,
+        height,
         scale
     ):
         values = list(history)
@@ -1303,15 +950,8 @@ class Dashboard:
         points = []
 
         for index, value in enumerate(values):
-            x = left + (
-                index / (len(values) - 1)
-            ) * graph_width
-
-            y = top + (
-                (scale - value)
-                / (2 * scale)
-            ) * graph_height
-
+            x = left + index / (len(values) - 1) * width
+            y = top + (scale - value) / (2 * scale) * height
             points.extend([x, y])
 
         self.graph.create_line(
@@ -1319,10 +959,6 @@ class Dashboard:
             fill=color,
             width=2
         )
-
-    # ========================================================
-    # CLOSE
-    # ========================================================
 
     def close(self):
         self.running = False
@@ -1332,7 +968,7 @@ class Dashboard:
 
 
 root = tk.Tk()
-app = Dashboard(root)
+Dashboard(root)
 root.mainloop()
 ```
 
