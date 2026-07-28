@@ -316,6 +316,7 @@ import re
 import time
 from collections import deque
 
+# Main settings
 BAUD = 9600
 HISTORY = 120
 TIMEOUT = 1.5
@@ -328,12 +329,14 @@ class Dashboard:
         self.root.geometry("1000x720")
         self.root.minsize(900, 650)
 
+        # Bluetooth connections
         self.imu = None
         self.motor = None
         self.running = True
+
+        # IMU data storage
         self.imu_queue = queue.Queue()
         self.last_imu_data = 0
-
         self.gx = deque(maxlen=HISTORY)
         self.gy = deque(maxlen=HISTORY)
         self.gz = deque(maxlen=HISTORY)
@@ -342,11 +345,13 @@ class Dashboard:
         self.build_ui()
         self.refresh_ports()
 
+        # Repeating updates
         self.root.after(20, self.update_imu)
         self.root.after(100, self.draw_graph)
         self.root.after(500, self.check_imu)
         self.root.protocol("WM_DELETE_WINDOW", self.close)
 
+    # Main interface
     def build_ui(self):
         tk.Label(
             self.root,
@@ -363,13 +368,19 @@ class Dashboard:
         connections.pack(fill="x", padx=15)
 
         self.imu_port = self.connection_row(
-            connections, 0, "HC-05 IMU:", self.connect_imu,
+            connections,
+            0,
+            "HC-05 IMU:",
+            self.connect_imu,
             self.disconnect_imu
         )
         self.imu_status = self.status_label(connections, 0)
 
         self.motor_port = self.connection_row(
-            connections, 1, "HC-06 Motor:", self.connect_motor,
+            connections,
+            1,
+            "HC-06 Motor:",
+            self.connect_motor,
             self.disconnect_motor
         )
         self.motor_status = self.status_label(connections, 1)
@@ -394,19 +405,28 @@ class Dashboard:
         self.raw_label.pack(fill="x", padx=15, pady=(0, 8))
 
     def connection_row(self, parent, row, text, connect, disconnect):
-        tk.Label(parent, text=text).grid(
-            row=row, column=0, padx=5, pady=5
-        )
+        tk.Label(
+            parent,
+            text=text
+        ).grid(row=row, column=0, padx=5, pady=5)
 
-        box = ttk.Combobox(parent, width=30, state="readonly")
+        box = ttk.Combobox(
+            parent,
+            width=30,
+            state="readonly"
+        )
         box.grid(row=row, column=1, padx=5)
 
         tk.Button(
-            parent, text="Connect", command=connect
+            parent,
+            text="Connect",
+            command=connect
         ).grid(row=row, column=2, padx=5)
 
         tk.Button(
-            parent, text="Disconnect", command=disconnect
+            parent,
+            text="Disconnect",
+            command=disconnect
         ).grid(row=row, column=3, padx=5)
 
         return box
@@ -421,6 +441,7 @@ class Dashboard:
         label.grid(row=row, column=4, padx=5)
         return label
 
+    # Motor controls
     def build_motor_ui(self, parent):
         frame = tk.LabelFrame(
             parent,
@@ -453,7 +474,9 @@ class Dashboard:
         ]:
             self.motor_button(frame, text, command)
 
-        self.motor_message = tk.StringVar(value="Motor stopped")
+        self.motor_message = tk.StringVar(
+            value="Motor stopped"
+        )
 
         tk.Label(
             frame,
@@ -470,6 +493,7 @@ class Dashboard:
             height=2
         ).pack(pady=5)
 
+    # IMU display
     def build_imu_ui(self, parent):
         frame = tk.LabelFrame(
             parent,
@@ -483,8 +507,15 @@ class Dashboard:
         readings.pack(fill="x")
 
         names = [
-            "Accel X", "Accel Y", "Accel Z", "Accel Total",
-            "Gyro X", "Gyro Y", "Gyro Z", "Roll", "Pitch"
+            "Accel X",
+            "Accel Y",
+            "Accel Z",
+            "Accel Total",
+            "Gyro X",
+            "Gyro Y",
+            "Gyro Z",
+            "Roll",
+            "Pitch"
         ]
 
         self.values = {
@@ -559,23 +590,46 @@ class Dashboard:
         self.graph.pack(fill="both", expand=True, pady=5)
 
     def value_box(self, parent, column, title, rows):
-        box = tk.LabelFrame(parent, text=title, padx=15, pady=10)
-        box.grid(row=0, column=column, padx=8, sticky="nsew")
+        box = tk.LabelFrame(
+            parent,
+            text=title,
+            padx=15,
+            pady=10
+        )
+        box.grid(
+            row=0,
+            column=column,
+            padx=8,
+            sticky="nsew"
+        )
 
         for row, (label, key) in enumerate(rows):
             tk.Label(
                 box,
                 text=label,
                 font=("Arial", 11, "bold")
-            ).grid(row=row, column=0, sticky="e", padx=5, pady=4)
+            ).grid(
+                row=row,
+                column=0,
+                sticky="e",
+                padx=5,
+                pady=4
+            )
 
             tk.Label(
                 box,
                 textvariable=self.values[key],
                 width=15,
                 anchor="w"
-            ).grid(row=row, column=1, sticky="w", padx=5, pady=4)
+            ).grid(
+                row=row,
+                column=1,
+                sticky="w",
+                padx=5,
+                pady=4
+            )
 
+    # Bluetooth ports
     def refresh_ports(self):
         ports = [
             port.device
@@ -594,14 +648,22 @@ class Dashboard:
             if "HC-06" in name or "HC06" in name:
                 self.motor_port.set(port)
 
+    # HC-05 connection
     def connect_imu(self):
         port = self.imu_port.get()
 
         if not port:
-            messagebox.showerror("HC-05", "Select the HC-05 port.")
+            messagebox.showerror(
+                "HC-05",
+                "Select the HC-05 port."
+            )
             return
 
-        if self.motor and self.motor.is_open and port == self.motor.port:
+        if (
+            self.motor
+            and self.motor.is_open
+            and port == self.motor.port
+        ):
             messagebox.showerror(
                 "Incorrect Port",
                 "HC-05 and HC-06 cannot use the same port."
@@ -611,11 +673,16 @@ class Dashboard:
         self.disconnect_imu()
 
         try:
-            connection = serial.Serial(port, BAUD, timeout=0.1)
+            connection = serial.Serial(
+                port,
+                BAUD,
+                timeout=0.1
+            )
             connection.reset_input_buffer()
 
             self.imu = connection
             self.last_imu_data = 0
+
             self.imu_status.config(
                 text="Waiting for data",
                 fg="orange"
@@ -628,7 +695,10 @@ class Dashboard:
             ).start()
 
         except serial.SerialException as error:
-            messagebox.showerror("HC-05 Error", str(error))
+            messagebox.showerror(
+                "HC-05 Error",
+                str(error)
+            )
 
     def read_imu(self, connection):
         while (
@@ -663,6 +733,7 @@ class Dashboard:
                 fg="red"
             )
 
+    # IMU updates
     def update_imu(self):
         try:
             while True:
@@ -677,7 +748,10 @@ class Dashboard:
                         text="Connected — data active",
                         fg="green"
                     )
-                    self.raw_label.config(text=f"IMU data: {line}")
+
+                    self.raw_label.config(
+                        text=f"IMU data: {line}"
+                    )
 
                 else:
                     self.raw_label.config(
@@ -708,7 +782,10 @@ class Dashboard:
             self.root.after(500, self.check_imu)
 
     def parse_imu(self, line):
-        parts = [part.strip() for part in line.split(",")]
+        parts = [
+            part.strip()
+            for part in line.split(",")
+        ]
 
         if len(parts) == 6:
             try:
@@ -733,23 +810,42 @@ class Dashboard:
         }
 
         names = [
-            "AccelX", "AccelY", "AccelZ",
-            "GyroX", "GyroY", "GyroZ"
+            "AccelX",
+            "AccelY",
+            "AccelZ",
+            "GyroX",
+            "GyroY",
+            "GyroZ"
         ]
 
         if all(name in values for name in names):
-            return [values[name] for name in names]
+            return [
+                values[name]
+                for name in names
+            ]
 
         return None
 
     def show_imu(self, data):
         ax, ay, az, gx, gy, gz = data
-        gx, gy, gz = map(math.degrees, (gx, gy, gz))
+        gx, gy, gz = map(
+            math.degrees,
+            (gx, gy, gz)
+        )
 
-        total = math.sqrt(ax ** 2 + ay ** 2 + az ** 2)
-        roll = math.degrees(math.atan2(ay, az))
+        total = math.sqrt(
+            ax ** 2 + ay ** 2 + az ** 2
+        )
+
+        roll = math.degrees(
+            math.atan2(ay, az)
+        )
+
         pitch = math.degrees(
-            math.atan2(-ax, math.sqrt(ay ** 2 + az ** 2))
+            math.atan2(
+                -ax,
+                math.sqrt(ay ** 2 + az ** 2)
+            )
         )
 
         updates = {
@@ -772,14 +868,22 @@ class Dashboard:
         self.gy.append(gy)
         self.gz.append(gz)
 
+    # HC-06 connection
     def connect_motor(self):
         port = self.motor_port.get()
 
         if not port:
-            messagebox.showerror("HC-06", "Select the HC-06 port.")
+            messagebox.showerror(
+                "HC-06",
+                "Select the HC-06 port."
+            )
             return
 
-        if self.imu and self.imu.is_open and port == self.imu.port:
+        if (
+            self.imu
+            and self.imu.is_open
+            and port == self.imu.port
+        ):
             messagebox.showerror(
                 "Incorrect Port",
                 "HC-05 and HC-06 cannot use the same port."
@@ -789,14 +893,22 @@ class Dashboard:
         self.disconnect_motor()
 
         try:
-            self.motor = serial.Serial(port, BAUD, timeout=0.1)
+            self.motor = serial.Serial(
+                port,
+                BAUD,
+                timeout=0.1
+            )
+
             self.motor_status.config(
                 text="Connected",
                 fg="green"
             )
 
         except serial.SerialException as error:
-            messagebox.showerror("HC-06 Error", str(error))
+            messagebox.showerror(
+                "HC-06 Error",
+                str(error)
+            )
 
     def disconnect_motor(self):
         connection = self.motor
@@ -834,11 +946,14 @@ class Dashboard:
                 "S": "Stopped"
             }
 
-            self.motor_message.set(names.get(command, command))
+            self.motor_message.set(
+                names.get(command, command)
+            )
 
         except serial.SerialException:
             self.disconnect_motor()
 
+    # Graph controls
     def clear_graph(self):
         self.gx.clear()
         self.gy.clear()
@@ -847,16 +962,34 @@ class Dashboard:
     def draw_graph(self):
         self.graph.delete("all")
 
-        width = max(self.graph.winfo_width(), 500)
-        height = max(self.graph.winfo_height(), 300)
+        width = max(
+            self.graph.winfo_width(),
+            500
+        )
+        height = max(
+            self.graph.winfo_height(),
+            300
+        )
 
         left, right, top, bottom = 65, 20, 60, 45
         graph_width = width - left - right
         graph_height = height - top - bottom
 
-        values = list(self.gx) + list(self.gy) + list(self.gz)
-        largest = max((abs(value) for value in values), default=0)
-        scale = max(25, math.ceil(largest * 1.15 / 25) * 25)
+        values = (
+            list(self.gx)
+            + list(self.gy)
+            + list(self.gz)
+        )
+
+        largest = max(
+            (abs(value) for value in values),
+            default=0
+        )
+
+        scale = max(
+            25,
+            math.ceil(largest * 1.15 / 25) * 25
+        )
 
         self.graph.create_text(
             width / 2,
@@ -874,10 +1007,14 @@ class Dashboard:
             x = left + index * 150
 
             self.graph.create_line(
-                x, 38, x + 25, 38,
+                x,
+                38,
+                x + 25,
+                38,
                 fill=color,
                 width=3
             )
+
             self.graph.create_text(
                 x + 32,
                 38,
@@ -885,8 +1022,19 @@ class Dashboard:
                 anchor="w"
             )
 
-        for value in [scale, scale / 2, 0, -scale / 2, -scale]:
-            y = top + (scale - value) / (2 * scale) * graph_height
+        for value in [
+            scale,
+            scale / 2,
+            0,
+            -scale / 2,
+            -scale
+        ]:
+            y = (
+                top
+                + (scale - value)
+                / (2 * scale)
+                * graph_height
+            )
 
             self.graph.create_line(
                 left,
@@ -895,6 +1043,7 @@ class Dashboard:
                 y,
                 fill="#dddddd"
             )
+
             self.graph.create_text(
                 left - 8,
                 y,
@@ -975,8 +1124,20 @@ class Dashboard:
         points = []
 
         for index, value in enumerate(values):
-            x = left + index / (len(values) - 1) * width
-            y = top + (scale - value) / (2 * scale) * height
+            x = (
+                left
+                + index
+                / (len(values) - 1)
+                * width
+            )
+
+            y = (
+                top
+                + (scale - value)
+                / (2 * scale)
+                * height
+            )
+
             points.extend([x, y])
 
         self.graph.create_line(
@@ -985,6 +1146,7 @@ class Dashboard:
             width=2
         )
 
+    # Close safely
     def close(self):
         self.running = False
         self.disconnect_motor()
@@ -1018,7 +1180,7 @@ root.mainloop()
 | PLA Filament | 3D Print Material | $13.99 | <a href="https://a.co/d/01n8owUR"> Link </a> |
 
 <!---
-# Other Resources/Examples
+# Additional Resources
 One of the best parts about Github is that you can view how other people set up their own work. Here are some past BSE portfolios that are awesome examples. You can view how they set up their portfolio, and you can view their index.md files to understand how they implemented different portfolio components.
 - [Example 1](https://trashytuber.github.io/YimingJiaBlueStamp/)
 - [Example 2](https://sviatil0.github.io/Sviatoslav_BSE/)
