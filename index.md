@@ -83,9 +83,15 @@ With this soldering and robot building knowledge, I look forward to my main proj
 # Schematics 
 
 **Motor Schematic:**
+
+This schematic includes an Arduino UNO R3, DC Motor, L298N Motor Driver, 5 AA batteries, and an HC-06 Bluetooth Module.
+
 ![tinkercadimage1](motor.png)
 
 **IMU Schematic:**
+
+For this schematic, I have an Arduino Nano, MPU-6050 (IMU Sensor), 9V battery, and an HC-05 Bluetooth Module.
+
 ![tinkercadimage2](imu.png)
 
 
