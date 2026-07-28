@@ -1,5 +1,5 @@
 # The Jairus-Scope (Rocket Flight Test and Data Logger)
-This project is a rocket flight test system designed to spin a gyroscope with a DC motor and a microcontroller. The speed and direction of the motor is controlled with a bluetooth module. When building the gyroscope, I had to integrate electronics, programming, and mechanical design while overcoming many different challenges in every process.
+This project is a rocket flight test system designed to spin a gyroscope with a DC motor and a microcontroller. The speed and direction of the motor is controlled with a bluetooth module. When building the gyroscope, I had to integrate electronics, programming, and mechanical design while overcoming many different challenges in every process. I wanted to do this project because it combined my interests in aerospace, electronics, and hands-on engineering.
 
 <!--- You should comment out all portions of your portfolio that you have not completed yet, as well as any instructions:-->
 
@@ -84,15 +84,34 @@ With this soldering and robot building knowledge, I look forward to my main proj
 
 **Motor Schematic:**
 
-This schematic includes an Arduino UNO R3, DC Motor, L298N Motor Driver, 5 AA batteries, and an HC-06 Bluetooth Module.
+This schematic includes:
+1. Arduino UNO R3
+2. DC Motor
+3. L298N Motor Driver
+4. 5 AA batteries
+5. Mini Breadboard
+6. HC-06 Bluetooth Module
 
-![tinkercadimage1](motor.png)
+Important Connections:
+Arduino UNO R3: GND -> Motor Driver GND (also has ground from batteries) and VIN -> +5V
+Motor Driver: ENA -> Digital 5, IN1 -> Digital 2, and IN2 -> Digital 3
+HC-06 Bluetooth Module: TXD -> Digital 10 and RXD -> Digital 11
+
+![tinkercadimage1](motorv2.png)
 
 **IMU Schematic:**
 
-For this schematic, I have an Arduino Nano, MPU-6050 (IMU Sensor), 9V battery, and an HC-05 Bluetooth Module.
+For this schematic, I have:
+1. Arduino Nano
+2. MPU-6050 (IMU Sensor)
+3. 9V battery
+4. HC-05 Bluetooth Module
 
-![tinkercadimage2](imu.png)
+Important Connections:
+IMU Sensor: SCL -> A5 and SDA -> A4
+HC-05 Bluetooth Module: TXD -> D2 and RXD -> D3
+
+![tinkercadimage2](imuv2.png)
 
 
 
