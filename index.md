@@ -79,10 +79,9 @@ The main challenge for me was soldering all of the components onto the Jitterbug
 **Next Step:**
 With this soldering and robot building knowledge, I look forward to my main project. I hope to apply these skills to the best of my ability.
 
-<!---
+
 # Schematics 
-Here's where you'll put images of your schematics. [Tinkercad](https://www.tinkercad.com/blog/official-guide-to-tinkercad-circuits) and [Fritzing](https://fritzing.org/learning/) are both great resoruces to create professional schematic diagrams, though BSE recommends Tinkercad becuase it can be done easily and for free in the browser. 
--->
+![tinkercadimage1](motor.png)
 
 
 
