@@ -1185,13 +1185,15 @@ root.mainloop()
 | Square Wooden Dowels | Vertical Supports| $13.99 | <a href="https://a.co/d/086giWlL"> Link </a> |
 | PLA Filament | 3D Print Material | $13.99 | <a href="https://a.co/d/01n8owUR"> Link </a> |
 
-<!---
+
 # Additional Resources
-One of the best parts about Github is that you can view how other people set up their own work. Here are some past BSE portfolios that are awesome examples. You can view how they set up their portfolio, and you can view their index.md files to understand how they implemented different portfolio components.
-- [Example 1](https://trashytuber.github.io/YimingJiaBlueStamp/)
-- [Example 2](https://sviatil0.github.io/Sviatoslav_BSE/)
-- [Example 3](https://arneshkumar.github.io/arneshbluestamp/)
-
-To watch the BSE tutorial on how to create a portfolio, click here.
--->
-
+These resources allowed me to learn and build this gyroscope. 
+- [Main Guidelines](https://www.instructables.com/Test-System-for-Experimental-Rocket-Flight-Compute/)
+- [Gear Mate Relation](https://www.youtube.com/watch?v=X-Qk3VlCDPo)
+- [How To: Gears](https://www.youtube.com/watch?v=AxCgO_eJocc)
+- [Different Types of Mates](https://www.youtube.com/watch?v=pNHncrWKru4&t=89s)
+- [Onshape Scaling Objects](https://www.youtube.com/watch?v=wjIVms6TGto)
+- [L298N Motor Driver Guide](https://www.youtube.com/watch?v=E2sTbpFsvXI)
+- [MPU6050 Guide](https://www.youtube.com/watch?v=a37xWuNJsQI)
+- [Python Tkinter](https://www.youtube.com/watch?v=6aKmTV6eYt8)
+  
