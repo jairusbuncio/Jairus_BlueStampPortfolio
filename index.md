@@ -81,7 +81,7 @@ With this soldering and robot building knowledge, I look forward to my main proj
 
 
 # Schematics 
-(motor.png)
+![tinkercadimage1](motor.png)
 
 
 
