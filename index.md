@@ -1,4 +1,5 @@
-# Rocket Flight Test and Data Logger
+# The Jairus-Scope
+Rocket Flight Test and Data Logger
 This project is a rocket flight test system designed to spin the gyroscope with a DC motor and a microcontroller. The speed and direction of the motor is controlled with a bluetooth module. When building the gyroscope, I had to integrate electronics, programming, and mechanical design while overcoming many different challenges in every process.
 
 <!--- You should comment out all portions of your portfolio that you have not completed yet, as well as any instructions:-->
