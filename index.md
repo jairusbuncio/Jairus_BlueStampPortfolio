@@ -31,6 +31,7 @@ Throughout my time in BlueStamp Engineering, I learned how to program an Arduino
 **Future Aspirations:**
 In the future, I hope to study mechanical or aerospace engineering and continue building projects that combine coding, electronics, and design. I want to improve my CAD, programming, and problem-solving skills through more hands-on experiences. I also hope to work on technology related to robotics, transportation, or aerospace. Ultimately, I want to use engineering to create practical solutions that make a meaningful impact.
 
+![ComponentsImage](IMG_7033.HEIC)
 
 # Second Milestone
 
