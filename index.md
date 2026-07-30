@@ -1,5 +1,5 @@
 # The Jairus-Scope (Rocket Flight Test and Data Logger)
-This project is a rocket flight test system designed to spin a gyroscope with a DC motor and a microcontroller. The speed and direction of the motor is controlled with a Bluetooth module. When building the gyroscope, I had to integrate electronics, programming, and mechanical design while overcoming many different challenges in every process. I wanted to do this project because it combined my interests in aerospace, electronics, and hands-on engineering.
+This project is a rocket flight test system designed to spin a gyroscope with a DC motor and a microcontroller. The speed and direction of the motor are controlled with a Bluetooth module. When building the gyroscope, I had to integrate electronics, programming, and mechanical design while overcoming many different challenges in every process. I wanted to do this project because it combined my interests in aerospace, electronics, and hands-on engineering.
 
 <!--- You should comment out all portions of your portfolio that you have not completed yet, as well as any instructions:-->
 
@@ -36,7 +36,7 @@ In the future, I hope to study mechanical or aerospace engineering and continue 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/2mdTbg3afOQ?si=Ub_4Ibfs9nyURTU-" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
 **Description:**
-In my second milestone, I powered the rotation of my gyroscope with a DC Motor. I've done this by utilizing 2 gears at a 2:1 rate, motor driver, Arduino UNO microcontroller, and a battery pack with 5 AA batteries. I electrically connected them by hooking up the battery pack to the motor driver, which is connected to the motor and microcontroller, so that enough voltage is provided for the circuit. The motor driver gives enough current to the DC motor, so that it can spin the gear attached to it, which spins the gyroscope via a rod with a gear attached to it. The Arduino serves as like the brain of the system. After I created a program to control different speeds for the motor, I uploaded that code to the Arduino so that it can tell the motor driver how to spin the DC motor depending on what I input. 
+In my second milestone, I powered the rotation of my gyroscope with a DC motor. I did this using two gears with a 2:1 gear ratio, a motor driver, an Arduino Uno, and a battery pack containing five AA batteries. The battery pack supplies power to the motor, while the motor driver uses signals from the Arduino to control the motor’s speed and direction. The DC motor spins a small gear, which transfers motion to a larger gear attached to the gyroscope’s rod. The Arduino serves as the brain of the system. After writing a program with different motor speeds, I uploaded it to the Arduino so it could send commands to the motor driver based on my input.
 
 The most surprising part of this project was having to learn more about different gear ratios and actually testing them. At first, my initial gear ratio didn't work and my DC motor would stall. After learning about the appropriate number of teeth and gear ratio for my situation, I was able to spin the gyroscope with little to no problems.
 
@@ -70,7 +70,7 @@ I plan on adding a motor to the side of my gyroscope so that I can spin the gyro
 <iframe width="560" height="315" src="https://www.youtube.com/embed/OiAZoEpLqxg?si=571pmQMK6GmbxzXV" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
 **Description:**
-My starter project was the jitterbug. The project centered around a vibration motor, which allowed the robot to vibrate and move around. It also included two LEDS for lights, and a switch to toggle the power on and off. I spent most of my time soldering each component to the Jitterbug PCB, which improved my soldering skills.
+My starter project was the jitterbug. The project centered around a vibration motor, which allowed the robot to vibrate and move around. It also included two LEDs for lights, and a switch to toggle the power on and off. I spent most of my time soldering each component to the Jitterbug PCB, which improved my soldering skills.
 
 **Challenges:**
 The main challenge for me was soldering all of the components onto the Jitterbug PCB. Since some pins were placed very close to each other, I had to take my time soldering. I focused on trying not to connect the solder between each hole, so that it wouldn't short circuit. At the same time, I made sure to cover the entire hole, including the gold-plated border. 
