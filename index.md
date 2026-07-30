@@ -1,5 +1,5 @@
 # The Jairus-Scope (Rocket Flight Test and Data Logger)
-This project is a rocket flight test system designed to spin a gyroscope with a DC motor and a microcontroller. The speed and direction of the motor is controlled with a bluetooth module. When building the gyroscope, I had to integrate electronics, programming, and mechanical design while overcoming many different challenges in every process. I wanted to do this project because it combined my interests in aerospace, electronics, and hands-on engineering.
+This project is a rocket flight test system designed to spin a gyroscope with a DC motor and a microcontroller. The speed and direction of the motor is controlled with a Bluetooth module. When building the gyroscope, I had to integrate electronics, programming, and mechanical design while overcoming many different challenges in every process. I wanted to do this project because it combined my interests in aerospace, electronics, and hands-on engineering.
 
 <!--- You should comment out all portions of your portfolio that you have not completed yet, as well as any instructions:-->
 
@@ -20,10 +20,10 @@ This project is a rocket flight test system designed to spin a gyroscope with a 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/jX32oZjV1kk?si=trR9E7ptVGnPHxqI" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
 **Description:**
-For my final milestone, I connected a bluetooth module to my Arduino. This allowed me to control the motion of my motor and gyroscope with a wireless connection. After that, I created an interface in Visual Studio Code with Python. I utilized Tkinter to create a window with different buttons that correspond to the same inputs that have differing speeds in my Arduino IDE code. 
+For my final milestone, I connected a Bluetooth module to my Arduino. This allowed me to control the motion of my motor and gyroscope with a wireless connection. After that, I created an interface in Visual Studio Code with Python. I utilized Tkinter to create a window with different buttons that correspond to the same inputs that have differing speeds in my Arduino IDE code. 
 
 **Challenges and Triumphs of BSE:**
-Coming into BlueStamp Engineering, I had little with eletronics, programming, and designing with CAD. Although there were many other challenges that came along the way, the biggest challenge for me was learning to design with CAD. Most of my project had to be 3D printed, so I had to design each part in Onshape. Despite this issue, I was able to persevere and work through these problems. Once I learned the basics with a few tutorials, I was able to figure out how to CAD and build my project. 
+Coming into BlueStamp Engineering, I had little experience with electronics, programming, and designing with CAD. Although there were many other challenges that came along the way, the biggest challenge for me was learning to design with CAD. Most of my project had to be 3D printed, so I had to design each part in Onshape. Despite this issue, I was able to persevere and work through these problems. Once I learned the basics with a few tutorials, I was able to figure out how to CAD and build my project. 
 
 **Key Topics:**
 Throughout my time in BlueStamp Engineering, I learned how to program an Arduino and connect electronic components such as motors, sensors, batteries, and Bluetooth modules. I also learned CAD and 3D printing by designing and assembling custom parts for my project. Through testing and troubleshooting, I improved both the mechanical and electrical parts of my design. I also documented my work through code, videos, and a GitHub portfolio.
@@ -63,7 +63,7 @@ The next challenge I faced was testing different tolerances for my rods. I had t
 Once I had passed all of these challenges, the only thing left to do was to piece everything together. 
 
 **Next Steps:**
-I plan on adding a motor to the side of my gyroscope so that I can spin the gyroscope. I will attach a gear to the motor and it will spin the gear that is attached to one of my rods. After that, I plan on adding bluetooth connection to this motor so that I can control different speeds on a separate interface without a wired connection. After this, I will start thinking about different modifications.
+I plan on adding a motor to the side of my gyroscope so that I can spin the gyroscope. I will attach a gear to the motor and it will spin the gear that is attached to one of my rods. After that, I plan on adding  connection to this motor so that I can control different speeds on a separate interface without a wired connection. After this, I will start thinking about different modifications.
   
 # Starter Project Milestone
 
