@@ -13,7 +13,7 @@ This project is a rocket flight test system designed to spin a gyroscope with a 
 
 <!--- **Replace the BlueStamp logo below with an image of yourself and your completed project. Follow the guide [here](https://tomcam.github.io/least-github-pages/adding-images-github-pages-site.html) if you need help.** -->
 
-![HeadstoneImage](Jairus_B_Project_Headshot.heif)
+![HeadstoneImage](Jairus_B_Project_Headshot.png)
 
 # Modification Milestone
 
