@@ -20,13 +20,17 @@ This project is a rocket flight test system designed to spin a gyroscope with a 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/2mdTbg3afOQ?si=Ub_4Ibfs9nyURTU-" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
 **Description:**
+In my modification milestone, I added the rocket capsule, which fits an Arduino Nano, 9V battery, HC-05 Bluetooth module, and an IMU sensor. I combined these components as compact as possible, and then measured it so that it could fit nicely inside a rocket capsule, which i designed with CAD. I also designed a cover with screw holes so that I can open and close it when needed. 
 
+This led to my 2nd modification, which is making an interface, where I can access the data from the IMU. This interface combines the Arduino UNO from my motor and Arduino Nano all into one place, where I can control the motor and see data at the same time. The IMU, which has an accelerometer and a gyroscope in it, is sending data to the interface, which is displayed on the graph. The graph shows how fast the IMU is rotating around different axes. There is also data above from the accelerometer, gyroscope, and also the pitch and roll of the IMU. 
 
 **Challenges Overcame:**
+The main challenge that I had with my first modification was making the components as compact as possible. This was needed because I didn't have much space inside my outer ring to fit a rocket capsule. I solved this by utilizing both sides of a breadboard to keep all the components together.
 
+The next challenge I faced was Bluetooth connection and creating the interface. Once I added the IMU part of my project, it was difficult to connect both Bluetooth modules to my laptop and control them at the same time. I solved this by making one interface that can connect to multiple ports. Once I was able to get the Bluetooth connection down, I created the buttons, data, and graph on the interface. 
 
 **Next Steps:**
-For this project in the future, I want t
+For this project in the future, I want to reprint the outer ring of the gyroscope. This is because my rocket holder can occasionally scrape against the outer ring, causing it to stabilize too quick due to friction. Another step I would want to take is to design a rocket holder that takes in account the weight imbalance inside of it or to add a counterweight. At the moment, the rocket holder tilts due to the heavy battery inside. This causes it to stabilize incorrectly. Fixing this issue would make my gyroscope more accurate and similar to a real gyroscope. 
 
 
 # Final Milestone
