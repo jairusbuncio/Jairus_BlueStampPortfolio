@@ -17,7 +17,7 @@ This project is a rocket flight test system designed to spin a gyroscope with a 
 
 # Modification Milestone
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/2mdTbg3afOQ?si=Ub_4Ibfs9nyURTU-" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/yzSRC9L7mIw?si=iLiGr4g9iPY1jcR6" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
 **Description:**
 In my modification milestone, I added the rocket capsule, which fits an Arduino Nano, 9V battery, HC-05 Bluetooth module, and an IMU sensor. I combined these components as compact as possible, and then measured it so that it could fit nicely inside a rocket capsule, which i designed with CAD. I also designed a cover with screw holes so that I can open and close it when needed. 
